@@ -1416,7 +1416,6 @@ fetch('data/models.json')
   const section = document.getElementById('interests');
   if (!cvs || !section) return;
   const ctx = cvs.getContext('2d');
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // --- Lenia parameters (canonical Orbium) ---
   const R = 13, T = 10, MU = 0.15, SIGMA = 0.015;
@@ -1469,6 +1468,16 @@ fetch('data/models.json')
   for (const o of raw) if (o[2] >= thresh) { koff.push(o); ksum2 += o[2]; }
   for (const o of koff) o[2] /= ksum2;
 
+  // Flatten the kernel into typed arrays (no per-element property lookups) and
+  // build wrap lookup tables so the hot loop needs no modulo per neighbour.
+  // Together these give a large speed-up on old low-end phones.
+  const KN = koff.length;
+  const kdx = new Int32Array(KN), kdy = new Int32Array(KN), kw = new Float32Array(KN);
+  for (let i = 0; i < KN; i++) { kdx[i] = koff[i][0]; kdy[i] = koff[i][1]; kw[i] = koff[i][2]; }
+  const wx = new Int32Array(GW + 2 * R), wy = new Int32Array(GH + 2 * R);
+  for (let i = 0; i < wx.length; i++) wx[i] = ((i - R) % GW + GW) % GW;
+  for (let i = 0; i < wy.length; i++) wy[i] = ((i - R) % GH + GH) % GH;
+
   let A = new Float32Array(GW * GH);
   let B = new Float32Array(GW * GH);
 
@@ -1488,18 +1497,17 @@ fetch('data/models.json')
 
   function step() {
     for (let y = 0; y < GH; y++) {
+      const yb = y + R, row = y * GW;
       for (let x = 0; x < GW; x++) {
+        const xb = x + R;
         let u = 0;
-        for (let i = 0; i < koff.length; i++) {
-          const o = koff[i];
-          const yy = ((y + o[1]) % GH + GH) % GH;
-          const xx = ((x + o[0]) % GW + GW) % GW;
-          u += A[yy * GW + xx] * o[2];
+        for (let i = 0; i < KN; i++) {
+          u += A[wy[yb + kdy[i]] * GW + wx[xb + kdx[i]]] * kw[i];
         }
         const g = 2 * bell(u, MU, SIGMA) - 1;   // growth in [-1, 1]
-        let v = A[y * GW + x] + g / T;
+        let v = A[row + x] + g / T;
         v = v < 0 ? 0 : v > 1 ? 1 : v;
-        B[y * GW + x] = v;
+        B[row + x] = v;
       }
     }
     const t = A; A = B; B = t;
@@ -1536,7 +1544,7 @@ fetch('data/models.json')
   }
 
   let visible = false, acc = 0, last = 0, raf = 0, steps = 0;
-  const DT = 1 / 14;   // ~14 Lenia updates per second
+  const DT = mobile ? 1 / 10 : 1 / 14;   // lighter update rate on phones
 
   function mass() { let m = 0; for (let i = 0; i < A.length; i++) m += A[i]; return m; }
 
@@ -1552,13 +1560,13 @@ fetch('data/models.json')
       if (m < 3 || m > GW * GH * 0.5 || steps > 1200) { seed(); steps = 0; }
     }
     draw();
-    if (!reduce) raf = requestAnimationFrame(loop);
+    raf = requestAnimationFrame(loop);
   }
   function start() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); } }
 
   const io = new IntersectionObserver((e) => {
     visible = e[0].isIntersecting;
-    if (visible) { if (reduce) { step(); draw(); } else start(); }
+    if (visible) start();
   }, { threshold: 0.15 });
   io.observe(section);
 
