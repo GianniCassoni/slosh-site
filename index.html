@@ -83,12 +83,18 @@
   }
   .lenia-box .cap b { color: var(--text); font-weight: 500; }
 
-  /* "Member of Italian Builders" footer badge. */
-  .ib-badge { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 26px; }
-  .ib-badge span { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
-  .ib-badge a { display: inline-flex; opacity: .88; transition: opacity .15s; }
-  .ib-badge a:hover { opacity: 1; }
-  .ib-badge img { height: 26px; width: auto; }
+  /* Footer affiliation badges (AIDAA + Italian Builders). */
+  .affil { display: flex; flex-wrap: wrap; justify-content: center; gap: 34px; margin-top: 28px; }
+  .affil .item { display: flex; flex-direction: column; align-items: center; gap: 9px; max-width: 240px; }
+  .affil .lab { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); line-height: 1.5; }
+  .affil a { display: inline-flex; opacity: .9; transition: opacity .15s; }
+  .affil a:hover { opacity: 1; }
+  .affil img { width: auto; display: block; }
+  /* Italian Builders wordmark is white — shows directly on the dark bg. */
+  .affil .ib img { height: 24px; }
+  /* AIDAA logo is dark navy — needs a light chip to stay legible. */
+  .affil .aidaa a { background: #f0ecde; border-radius: 6px; padding: 8px 12px; }
+  .affil .aidaa img { height: 40px; }
 
   /* The interactive demo occupies the first screen; the page scrolls past it. */
   #demo { position: relative; z-index: 1; width: 100%; height: 100vh; height: 100dvh; overflow: hidden; }
@@ -575,11 +581,19 @@
     <footer class="legal">
       &copy; 2026 Gianni Cassoni. Interactive demo: coupled reduced-order model of spacecraft
       rigid-body motion and capillary propellant sloshing.
-      <div class="ib-badge">
-        <span>Member of</span>
-        <a href="https://italianbuilders.co" target="_blank" rel="noopener" aria-label="Italian Builders">
-          <img src="https://italianbuilders.co/logo-vector.svg" alt="Italian Builders" />
-        </a>
+      <div class="affil">
+        <div class="item aidaa">
+          <span class="lab">Organizing Committee Member<br>A.I.D.A.A. &mdash; Italian Association of Aeronautics &amp; Astronautics</span>
+          <a href="https://www.aidaa.it/" target="_blank" rel="noopener" aria-label="A.I.D.A.A.">
+            <img src="https://www.aidaa.it/wp-content/uploads/2021/01/AIDAA_logo_contorno.png" alt="A.I.D.A.A." />
+          </a>
+        </div>
+        <div class="item ib">
+          <span class="lab">Member of</span>
+          <a href="https://italianbuilders.co" target="_blank" rel="noopener" aria-label="Italian Builders">
+            <img src="https://italianbuilders.co/logo-vector.svg" alt="Italian Builders" />
+          </a>
+        </div>
       </div>
     </footer>
   </section>
