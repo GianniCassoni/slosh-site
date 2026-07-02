@@ -9,16 +9,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #232e6b;
-    --bg2: #1b2450;
-    --panel: rgba(240,236,222,0.06);
-    --panel-border: rgba(240,236,222,0.22);
-    --text: #f0ecde;
-    --muted: rgba(240,236,222,0.66);
-    --accent: #ec7a2c;
-    --accent2: rgba(236,122,44,0.9);
-    --active: #ec7a2c;
-    --grid: rgba(240,236,222,0.10);
+    --bg: #2b2a20;
+    --bg2: #1f1e16;
+    --panel: rgba(236,223,196,0.06);
+    --panel-border: rgba(236,223,196,0.24);
+    --text: #ecdfc4;
+    --muted: rgba(236,223,196,0.64);
+    --accent: #c68a3c;
+    --accent2: rgba(198,138,60,0.92);
+    --active: #c68a3c;
+    --grid: rgba(236,223,196,0.10);
     --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
     --serif: "Instrument Serif", "Times New Roman", Georgia, serif;
   }
@@ -46,7 +46,7 @@
     position: fixed; top: 0; left: 0; right: 0; z-index: 30;
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px clamp(14px, 4vw, 34px);
-    background: linear-gradient(180deg, rgba(35,46,107,.88) 0%, rgba(35,46,107,0) 100%);
+    background: linear-gradient(180deg, rgba(43,42,32,.9) 0%, rgba(43,42,32,0) 100%);
     backdrop-filter: blur(3px);
     pointer-events: none;
   }
@@ -88,7 +88,7 @@
   /* Bottom control panel */
   #panel {
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
-    background: linear-gradient(180deg, rgba(27,36,80,0) 0%, rgba(27,36,80,.88) 22%, rgba(27,36,80,.97) 100%);
+    background: linear-gradient(180deg, rgba(31,30,22,0) 0%, rgba(31,30,22,.9) 22%, rgba(31,30,22,.98) 100%);
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     backdrop-filter: blur(6px);
   }
@@ -101,8 +101,8 @@
     font-size: 11px; line-height: 1.15; cursor: pointer; transition: all .12s;
   }
   button.preset small { display: block; color: var(--muted); font-size: 10px; }
-  button.preset.on { background: var(--accent); border-color: var(--accent); color: #1b2450; }
-  button.preset.on small { color: rgba(27,36,80,.8); }
+  button.preset.on { background: var(--accent); border-color: var(--accent); color: #241f14; }
+  button.preset.on small { color: rgba(36,31,20,.8); }
   button.preset:disabled { opacity: .32; cursor: not-allowed; }
 
   .slider { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; }
@@ -121,15 +121,23 @@
     border-radius: 12px; font-size: 20px; font-weight: 600; cursor: pointer;
     display: flex; align-items: center; justify-content: center; user-select: none;
   }
-  .pad button:active, .pad button.press { background: var(--active); border-color: var(--active); color: #1b2450; }
+  .pad button:active, .pad button.press { background: var(--active); border-color: var(--active); color: #241f14; }
   .pad .c { visibility: hidden; }
   .actions { display: flex; flex-direction: column; gap: 6px; pointer-events: auto; }
   .actions button { width: 52px; height: 52px; font-size: 13px; }
   #status { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:8;
             background:rgba(0,0,0,.6); padding:14px 20px; border-radius:10px; font-size:13px; display:none; }
+  @media (max-width: 600px) {
+    #title { top: 44px; padding: 6px 12px 2px; }
+    #title h1 { font-size: 16px; }
+    #title p { display: none; }
+    #hud { top: 70px; font-size: 11px; }
+    #controls { bottom: 250px; padding: 0 12px; }
+  }
   @media (max-width: 480px) {
     .pad { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); }
     .actions button { width: 46px; height: 46px; }
+    #controls { bottom: 262px; }
   }
 
   /* Scroll cue at the bottom of the demo */
@@ -153,7 +161,7 @@
     text-transform: uppercase; border: 1px solid var(--panel-border); color: var(--text);
     background: transparent; transition: all .15s;
   }
-  .cta a.primary { background: var(--accent); border-color: var(--accent); color: #1b2450; }
+  .cta a.primary { background: var(--accent); border-color: var(--accent); color: #241f14; }
   .cta a:hover { border-color: var(--text); }
 
   section.block { padding: 54px 0 6px; border-top: 1px solid var(--panel-border); }
@@ -172,7 +180,7 @@
   .card .role { color: var(--accent2); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
 
   /* Interactive LinkedIn post carousel */
-  .li-carousel { position: relative; margin: 18px 0 4px; max-width: 560px; }
+  .li-carousel { position: relative; margin: 18px auto 4px; max-width: 560px; }
   .li-viewport {
     overflow: hidden; border: 1px solid var(--panel-border); border-radius: 4px;
     background: var(--panel);
@@ -184,7 +192,7 @@
   .li-nav {
     position: absolute; top: 50%; transform: translateY(-50%); z-index: 4;
     width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
-    border: 1px solid var(--panel-border); background: rgba(27,36,80,.82);
+    border: 1px solid var(--panel-border); background: rgba(31,30,22,.82);
     color: var(--text); font-size: 20px; line-height: 1; display: flex;
     align-items: center; justify-content: center; transition: border-color .15s, color .15s;
   }
@@ -197,6 +205,11 @@
     border: 1px solid var(--panel-border); background: transparent; transition: background .15s, border-color .15s;
   }
   .li-dots button.on { background: var(--accent); border-color: var(--accent); }
+  /* Fallback links shown in addition to the embeds (LinkedIn iframes often
+     fail to render inside mobile browsers, so always offer a direct link). */
+  .li-fallback { text-align: center; font-size: 12px; color: var(--muted); margin: 12px 0 0; line-height: 1.6; }
+  .li-fallback a { color: var(--accent); text-decoration: none; }
+  .li-fallback a:hover { text-decoration: underline; }
 
   /* Featured paper cards (pantheon-style boxes linked to the PDF) */
   .papers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0 4px; }
@@ -212,7 +225,7 @@
     font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px;
     border-radius: 2px; border: 1px solid var(--panel-border); color: var(--muted);
   }
-  .paper .badge.new { background: var(--accent); border-color: var(--accent); color: #1b2450; }
+  .paper .badge.new { background: var(--accent); border-color: var(--accent); color: #241f14; }
   .paper h3 { font-family: var(--serif); font-weight: 400; font-size: 21px; line-height: 1.15;
               margin: 0 0 8px; color: var(--text); }
   .paper .authors { color: var(--muted); font-size: 12.5px; line-height: 1.5; margin: 0 0 12px; }
@@ -401,6 +414,10 @@
       <button class="li-nav prev" id="li-prev" aria-label="Previous post">&lsaquo;</button>
       <button class="li-nav next" id="li-next" aria-label="Next post">&rsaquo;</button>
       <div class="li-dots" id="li-dots"></div>
+      <p class="li-fallback">Posts not loading? Open them directly &mdash;
+        <a href="https://www.linkedin.com/feed/update/urn:li:activity:7468333717594333184/" target="_blank" rel="noopener">post&nbsp;1</a> &middot;
+        <a href="https://www.linkedin.com/feed/update/urn:li:activity:7442295738686115840/" target="_blank" rel="noopener">post&nbsp;2</a>
+        on LinkedIn &nearr;</p>
     </div>
   </section>
 
@@ -816,7 +833,7 @@ function buildCraft(preset) {
   // Solar panels + booms (opaque, off to the sides so they don't occlude).
   for (const sign of [1, -1]) {
     const yPanel = sign * (busHalf + boomSpan + panelHalf);
-    craft.add(boxMesh(0, yPanel, zPanel, panelChord, 2 * panelHalf, panelThick, 0x1B3A8C, 1.0, 0x6E86C8));
+    craft.add(boxMesh(0, yPanel, zPanel, panelChord, 2 * panelHalf, panelThick, 0x556b2f, 1.0, 0x8a9a5a));
     const yBoom = sign * (busHalf + 0.5 * boomSpan);
     craft.add(boxMesh(0, yBoom, zPanel, 0.18 * R, boomSpan, 0.08 * R, 0x9aa7bd, 1.0, null));
   }
@@ -1091,7 +1108,7 @@ function updateHUD(render, fx, fz) {
     `t = <b>${sim.t.toFixed(2)} s</b><br>` +
     `x/R = <b>${(render.xShift / R).toFixed(2)}</b>&nbsp; z/R = <b>${(render.zShift / R).toFixed(2)}</b><br>` +
     `Fx = <b>${fx.toFixed(0)} N</b>&nbsp; Fz = <b>${fz.toFixed(0)} N</b>` +
-    (paused ? '<br><b style="color:#ec7a2c">PAUSED</b>' : '');
+    (paused ? '<br><b style="color:#c68a3c">PAUSED</b>' : '');
 }
 
 function animate() {
@@ -1146,13 +1163,13 @@ window.addEventListener('resize', () => {
   // graticule reads as a real globe instead of a transparent cage.
   const solid = new THREE.Mesh(
     new THREE.SphereGeometry(RAD * 0.985, 48, 32),
-    new THREE.MeshBasicMaterial({ color: 0x232e6b })
+    new THREE.MeshBasicMaterial({ color: 0x2b2a20 })
   );
   spin.add(solid);
   // Latitude/longitude wireframe.
   const wire = new THREE.LineSegments(
     new THREE.WireframeGeometry(new THREE.SphereGeometry(RAD, 36, 24)),
-    new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.24 })
+    new THREE.LineBasicMaterial({ color: 0xc68a3c, transparent: true, opacity: 0.24 })
   );
   spin.add(wire);
   // Bright silhouette ring for a clean engraving-style edge.
@@ -1163,7 +1180,7 @@ window.addEventListener('resize', () => {
   }
   const rim = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints(rimPts),
-    new THREE.LineBasicMaterial({ color: 0xf0ecde, transparent: true, opacity: 0.5 })
+    new THREE.LineBasicMaterial({ color: 0xecdfc4, transparent: true, opacity: 0.5 })
   );
   globe.add(rim);  // billboard-ish edge, not spun
 
@@ -1171,8 +1188,8 @@ window.addEventListener('resize', () => {
   // wings, carried on its own tilted orbit ring so the paths cross the sphere.
   function makeSatellite() {
     const sat = new THREE.Group();
-    const beige = new THREE.MeshBasicMaterial({ color: 0xf0ecde });
-    const green = new THREE.MeshBasicMaterial({ color: 0xec7a2c });
+    const beige = new THREE.MeshBasicMaterial({ color: 0xecdfc4 });
+    const green = new THREE.MeshBasicMaterial({ color: 0x556b2f });
     const bus = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.22), beige);
     sat.add(bus);
     const panelGeo = new THREE.BoxGeometry(0.44, 0.02, 0.14);
@@ -1198,7 +1215,7 @@ window.addEventListener('resize', () => {
     }
     ring.add(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.18 })
+      new THREE.LineBasicMaterial({ color: 0xc68a3c, transparent: true, opacity: 0.18 })
     ));
     const sat = makeSatellite();
     ring.add(sat);
