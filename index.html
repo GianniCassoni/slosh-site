@@ -69,13 +69,26 @@
     opacity: 0; transition: opacity .6s ease;
   }
 
-  /* Lenia "coherent element" + worm-soliton field behind the Research interests
-     section — fades in only while that section is on screen. */
-  #lenia-bg {
-    position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    opacity: 0; transition: opacity .9s ease; filter: blur(0.4px);
+  /* Boxed live Lenia "orbium" glider inside the Research interests section. */
+  .lenia-box {
+    margin: 22px auto 6px; max-width: 560px;
+    border: 1px solid var(--panel-border); border-radius: 6px;
+    background: #05060a; overflow: hidden; backdrop-filter: blur(2px);
   }
-  #lenia-bg.on { opacity: 1; }
+  .lenia-box canvas { display: block; width: 100%; height: 200px; image-rendering: auto; }
+  .lenia-box .cap {
+    font-size: 11.5px; color: var(--muted); line-height: 1.5;
+    padding: 9px 14px 11px; border-top: 1px solid var(--panel-border);
+    background: var(--panel);
+  }
+  .lenia-box .cap b { color: var(--text); font-weight: 500; }
+
+  /* "Member of Italian Builders" footer badge. */
+  .ib-badge { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 26px; }
+  .ib-badge span { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .ib-badge a { display: inline-flex; opacity: .88; transition: opacity .15s; }
+  .ib-badge a:hover { opacity: 1; }
+  .ib-badge img { height: 26px; width: auto; }
 
   /* The interactive demo occupies the first screen; the page scrolls past it. */
   #demo { position: relative; z-index: 1; width: 100%; height: 100vh; height: 100dvh; overflow: hidden; }
@@ -283,7 +296,6 @@
 </head>
 <body>
 <div id="earth-bg"></div>
-<canvas id="lenia-bg"></canvas>
 <div id="grid-bg"></div>
 
 <nav id="nav">
@@ -513,34 +525,40 @@
   <section class="block" id="interests">
     <h2>Research interests</h2>
     <p class="lead">
-      Beyond spaceflight fluid dynamics, I am drawn to <strong>computational nonlinear dynamics and
-      complex systems</strong>&nbsp;&mdash; how coherent, self-sustaining structures emerge from simple
-      local rules, and when a high-dimensional system genuinely admits a faithful low-dimensional
-      description. It is the same question that runs through my sloshing work, seen from the other side.
+      Beyond spaceflight fluid dynamics, I am drawn to <strong>computational nonlinear dynamics</strong>&nbsp;&mdash;
+      how organized motion persists in systems governed by simple rules, and when a high-dimensional system
+      genuinely admits a faithful low-dimensional description. The same thread runs through periodic orbits
+      and limit cycles, quasi-periodic tori, bounded chaos, and localized coherent structures &mdash; from
+      rotorcraft stability to fluid&ndash;structure dynamics to continuous cellular automata like Lenia.
     </p>
+
+    <div class="lenia-box">
+      <canvas id="lenia-glider"></canvas>
+      <div class="cap"><b>A live Lenia &ldquo;orbium&rdquo; glider.</b> A continuous-space cellular automaton
+        running in your browser: a self-organizing coherent structure that translates while preserving its
+        shape &mdash; a moving-frame return, the hallmark of a local coherent structure.</div>
+    </div>
+
     <div class="grid2">
+      <div class="card">
+        <div class="role">A unifying residual view</div>
+        <h3>Recurrence &amp; coherent structures</h3>
+        <p>A recurrent or coherent object can be recognized by applying an evolution operator and measuring a
+           <em>residual</em>: how far the state fails to close on itself, possibly after a symmetry or in a
+           moving frame. One language covers exact periodic motion, quasi-periodic near-returns, bounded
+           chaotic recurrence, and local coherent structures &mdash; read together with Floquet multipliers
+           and Lyapunov exponents to tell them apart.</p>
+      </div>
       <div class="card">
         <div class="role">Coherent structures &amp; closure</div>
         <h3>When is a reduced model actually closed?</h3>
-        <p>I study coherent elements in continuous cellular automata (Lenia) and in fluid&ndash;structure
-           systems through a <em>closure residual</em>: a forward-pass&ndash;only diagnostic that measures
-           whether a compressed feature evolves on its own, weakly coupled to the unresolved degrees of
-           freedom. It turns &ldquo;is this reduced description valid?&rdquo; into a number you can compute.</p>
-      </div>
-      <div class="card">
-        <div class="role">Complex systems &rarr; learning systems</div>
-        <h3>From gliders to steering directions</h3>
-        <p>The same closure idea travels into machine learning: I am exploring the closure residual as a
-           robustness diagnostic for activation-steering directions in large language models&nbsp;&mdash;
-           quantifying whether a direction expresses a capability consistently across inputs, using only
-           forward passes on a single consumer GPU.</p>
+        <p>I study when a compressed feature evolves on its own, weakly coupled to the unresolved degrees of
+           freedom, through a <em>closure residual</em> &mdash; a forward-pass&ndash;only diagnostic. It turns
+           &ldquo;is this reduced description valid?&rdquo; into a number, and travels from Lenia gliders and
+           fluid&ndash;structure features to activation-steering directions in large language models on a
+           single consumer GPU.</p>
       </div>
     </div>
-    <p class="lead" style="margin-top:16px">
-      Recurring themes: emergent coherent structures (Lenia gliders, tube/worm solitons), method-of-slices
-      reduction of travelling structures, bifurcation and stability analysis, and <em>dynamical</em> rather
-      than purely algebraic criteria for when a compressed model stays faithful.
-    </p>
   </section>
 
   <section class="block" id="contact">
@@ -557,6 +575,12 @@
     <footer class="legal">
       &copy; 2026 Gianni Cassoni. Interactive demo: coupled reduced-order model of spacecraft
       rigid-body motion and capillary propellant sloshing.
+      <div class="ib-badge">
+        <span>Member of</span>
+        <a href="https://italianbuilders.co" target="_blank" rel="noopener" aria-label="Italian Builders">
+          <img src="https://italianbuilders.co/logo-vector.svg" alt="Italian Builders" />
+        </a>
+      </div>
     </footer>
   </section>
 </main>
@@ -1367,126 +1391,157 @@ fetch('data/models.json')
 
 <script>
 // ---------------------------------------------------------------------------
-// Research-interests background: drifting Lenia-style coherent "creatures"
-// (soft concentric-ring blobs) plus a slow worm/tube soliton snaking across.
-// A stylised evocation of the Lenia + tube-soliton work — pure canvas 2D, it
-// only animates while the #interests section is on screen (perf + battery).
+// Live Lenia "orbium" glider — a continuous-space cellular automaton.
+// Standard Lenia: A_{t+1} = clip(A + (1/T) * G(K * A), 0, 1), with an
+// exponential shell kernel and a Gaussian growth mapping. The canonical
+// Orbium is a stable glider that translates while keeping its shape.
+// Runs only while the section is visible; auto-reseeds if it dies/blows up.
 // ---------------------------------------------------------------------------
-(function initLeniaField() {
-  const cvs = document.getElementById('lenia-bg');
+(function initLeniaGlider() {
+  const cvs = document.getElementById('lenia-glider');
   const section = document.getElementById('interests');
   if (!cvs || !section) return;
   const ctx = cvs.getContext('2d');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  let W = 0, H = 0, dpr = 1, mobile = false;
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = window.innerWidth; H = window.innerHeight;
-    mobile = W < 620;
-    cvs.width = Math.round(W * dpr);
-    cvs.height = Math.round(H * dpr);
-    cvs.style.width = W + 'px';
-    cvs.style.height = H + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  resize();
+  // --- Lenia parameters (canonical Orbium) ---
+  const R = 13, T = 10, MU = 0.15, SIGMA = 0.015;
+  const mobile = window.innerWidth < 620;
+  const GW = mobile ? 64 : 88, GH = mobile ? 44 : 56;   // torus grid
 
-  // Colour ramp for a Lenia creature: transparent core-out to blue → orange → beige.
-  // Each "shell" is a ring so the blobs read as organised structures, not plain dots.
-  function makeCreature() {
-    return {
-      x: Math.random() * W, y: Math.random() * H,
-      r: (mobile ? 60 : 90) + Math.random() * (mobile ? 40 : 80),
-      // Slow wander driven by two incommensurate phases per axis.
-      px: Math.random() * 6.28, py: Math.random() * 6.28,
-      sx: 0.10 + Math.random() * 0.16, sy: 0.10 + Math.random() * 0.16,
-      ax: 26 + Math.random() * 34, ay: 26 + Math.random() * 34,
-      spin: (Math.random() * 2 - 1) * 0.3, phase: Math.random() * 6.28,
-    };
-  }
-  let creatures = [];
-  function seed() { creatures = Array.from({ length: mobile ? 4 : 6 }, makeCreature); }
-  seed();
-
-  // A worm/tube soliton: a thick glowing filament that undulates and drifts.
-  const worms = [
-    { y: 0.42, amp: 60, k: 0.011, spd: 0.35, phase: 0, w: mobile ? 22 : 34, dir: 1 },
-    { y: 0.68, amp: 44, k: 0.014, spd: 0.24, phase: 3.1, w: mobile ? 16 : 26, dir: -1 },
+  // Canonical Orbium seed (20x20), values in [0,1].
+  const ORBIUM = [
+    [0,0,0,0,0,0,0.1,0.14,0.1,0,0,0.03,0.03,0,0,0.3,0,0,0,0],
+    [0,0,0,0,0,0.08,0.24,0.3,0.3,0.18,0.14,0.15,0.16,0.15,0.09,0.2,0,0,0,0],
+    [0,0,0,0,0,0.15,0.34,0.44,0.46,0.38,0.18,0.14,0.11,0.13,0.19,0.18,0.45,0,0,0],
+    [0,0,0,0,0.06,0.13,0.39,0.5,0.5,0.37,0.06,0,0,0,0.02,0.16,0.68,0,0,0],
+    [0,0,0,0.11,0.17,0.17,0.33,0.4,0.38,0.28,0.14,0,0,0,0,0,0.18,0.42,0,0],
+    [0,0,0.09,0.18,0.13,0.06,0.08,0.26,0.32,0.32,0.27,0,0,0,0,0,0,0.82,0,0],
+    [0.27,0,0.16,0.12,0,0,0,0.25,0.38,0.44,0.45,0.34,0,0,0,0,0,0.22,0.17,0],
+    [0,0.07,0.2,0.02,0,0,0,0.31,0.48,0.57,0.6,0.57,0,0,0,0,0,0,0.49,0],
+    [0,0.59,0.19,0,0,0,0,0.2,0.57,0.69,0.76,0.76,0.49,0,0,0,0,0,0.36,0],
+    [0,0.58,0.19,0,0,0,0,0,0.67,0.83,0.9,0.92,0.87,0.12,0,0,0,0,0.22,0.07],
+    [0,0,0.46,0,0,0,0,0,0.7,0.93,1,1,1,0.61,0,0,0,0,0.18,0.11],
+    [0,0,0.82,0,0,0,0,0,0.47,1,1,0.98,1,0.96,0.27,0,0,0,0.19,0.1],
+    [0,0,0.46,0,0,0,0,0,0.25,0.83,0.95,0.98,1,1,0.84,0,0,0,0.15,0.06],
+    [0,0,0,0.35,0,0,0,0,0.09,0.8,0.89,0.94,0.98,1,0.82,0,0,0,0.12,0.01],
+    [0,0,0,0.24,0,0,0,0,0,0.59,0.82,0.92,0.98,1,0.68,0,0,0,0.09,0],
+    [0,0,0,0,0.29,0,0,0,0,0.3,0.76,0.9,0.98,1,0.46,0,0,0,0.03,0],
+    [0,0,0,0,0.15,0.15,0,0,0,0,0.6,0.86,0.96,0.99,0.29,0,0,0,0,0],
+    [0,0,0,0,0,0.32,0.15,0,0,0,0.35,0.78,0.9,0.83,0.05,0,0,0,0,0],
+    [0,0,0,0,0,0,0.32,0.24,0.14,0.13,0.35,0.55,0.5,0.16,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0.22,0.35,0.35,0.28,0.13,0,0,0,0,0,0,0,0],
   ];
 
-  function drawCreature(c, t) {
-    const x = c.x + Math.sin(t * c.sx + c.px) * c.ax;
-    const y = c.y + Math.cos(t * c.sy + c.py) * c.ay;
-    const pulse = 1 + 0.08 * Math.sin(t * 0.6 + c.phase);
-    const r = c.r * pulse;
-    const g = ctx.createRadialGradient(x, y, r * 0.05, x, y, r);
-    // Concentric alternating rings = the Lenia signature.
-    g.addColorStop(0.00, 'rgba(240,236,222,0.16)');
-    g.addColorStop(0.18, 'rgba(236,122,44,0.16)');
-    g.addColorStop(0.34, 'rgba(27,36,80,0.02)');
-    g.addColorStop(0.50, 'rgba(236,122,44,0.13)');
-    g.addColorStop(0.66, 'rgba(27,36,80,0.02)');
-    g.addColorStop(0.82, 'rgba(110,134,200,0.10)');
-    g.addColorStop(1.00, 'rgba(27,36,80,0.0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, 6.2832);
-    ctx.fill();
-  }
-
-  function drawWorm(wm, t) {
-    const steps = 46;
-    const drift = (t * wm.spd * wm.dir * 40) % (W + 400);
-    const x0 = wm.dir > 0 ? -200 + drift : W + 200 - drift;
-    const baseY = wm.y * H;
-    const pts = [];
-    for (let i = 0; i <= steps; i++) {
-      const px = x0 + wm.dir * (i / steps) * (W + 400);
-      const py = baseY
-        + Math.sin(px * wm.k + t * 0.8 + wm.phase) * wm.amp
-        + Math.sin(px * wm.k * 2.3 + t * 0.5) * wm.amp * 0.3;
-      pts.push([px, py]);
+  // Precompute the normalized exponential shell kernel as sparse offsets.
+  const koff = [];
+  let ksum = 0;
+  for (let dy = -R; dy <= R; dy++) {
+    for (let dx = -R; dx <= R; dx++) {
+      const d = Math.sqrt(dx * dx + dy * dy) / R;
+      if (d > 0 && d < 1) {
+        const w = Math.exp(4 - 1 / (d * (1 - d)));  // exp core, alpha=4
+        koff.push([dx, dy, w]); ksum += w;
+      }
     }
-    // Outer translucent tube.
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = 'rgba(236,122,44,0.10)';
-    ctx.lineWidth = wm.w;
-    stroke(pts);
-    // Inner bright core.
-    ctx.strokeStyle = 'rgba(240,236,222,0.16)';
-    ctx.lineWidth = wm.w * 0.34;
-    stroke(pts);
   }
-  function stroke(pts) {
-    ctx.beginPath();
-    ctx.moveTo(pts[0][0], pts[0][1]);
-    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
-    ctx.stroke();
+  for (const o of koff) o[2] /= ksum;
+
+  let A = new Float32Array(GW * GH);
+  let B = new Float32Array(GW * GH);
+
+  function bell(x, m, s) { const d = (x - m) / s; return Math.exp(-0.5 * d * d); }
+
+  function seed() {
+    A.fill(0);
+    const oy = Math.floor(GH / 2) - 10, ox = 6;
+    for (let y = 0; y < 20; y++) {
+      for (let x = 0; x < 20; x++) {
+        const gy = ((oy + y) % GH + GH) % GH, gx = ((ox + x) % GW + GW) % GW;
+        A[gy * GW + gx] = ORBIUM[y][x];
+      }
+    }
+  }
+  seed();
+
+  function step() {
+    for (let y = 0; y < GH; y++) {
+      for (let x = 0; x < GW; x++) {
+        let u = 0;
+        for (let i = 0; i < koff.length; i++) {
+          const o = koff[i];
+          const yy = ((y + o[1]) % GH + GH) % GH;
+          const xx = ((x + o[0]) % GW + GW) % GW;
+          u += A[yy * GW + xx] * o[2];
+        }
+        const g = 2 * bell(u, MU, SIGMA) - 1;   // growth in [-1, 1]
+        let v = A[y * GW + x] + g / T;
+        v = v < 0 ? 0 : v > 1 ? 1 : v;
+        B[y * GW + x] = v;
+      }
+    }
+    const t = A; A = B; B = t;
   }
 
-  let visible = false, t0 = performance.now(), raf = 0;
-  function frame(now) {
+  // Colour ramp: dark -> deep blue -> orange -> beige (matches the site).
+  function ramp(v, o, idx) {
+    let r, g, b;
+    if (v < 0.25) { const t = v / 0.25; r = 5 + t * 22; g = 8 + t * 40; b = 20 + t * 90; }
+    else if (v < 0.6) { const t = (v - 0.25) / 0.35; r = 27 + t * 209; g = 48 + t * 74; b = 110 - t * 66; }
+    else { const t = (v - 0.6) / 0.4; r = 236 + t * 4; g = 122 + t * 114; b = 44 + t * 178; }
+    o[idx] = r; o[idx + 1] = g; o[idx + 2] = b; o[idx + 3] = 255;
+  }
+
+  // Offscreen grid buffer -> smooth-scaled onto the visible canvas.
+  const grid = document.createElement('canvas');
+  grid.width = GW; grid.height = GH;
+  const gctx = grid.getContext('2d');
+  const img = gctx.createImageData(GW, GH);
+
+  function draw() {
+    const d = img.data;
+    for (let i = 0; i < GW * GH; i++) ramp(A[i], d, i * 4);
+    gctx.putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(grid, 0, 0, GW, GH, 0, 0, cvs.width, cvs.height);
+  }
+
+  function resize() {
+    const w = cvs.clientWidth || 560, h = 200;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cvs.width = Math.round(w * dpr); cvs.height = Math.round(h * dpr);
+    draw();
+  }
+
+  let visible = false, acc = 0, last = 0, raf = 0, steps = 0;
+  const DT = 1 / 14;   // ~14 Lenia updates per second
+
+  function mass() { let m = 0; for (let i = 0; i < A.length; i++) m += A[i]; return m; }
+
+  function loop(now) {
     raf = 0;
     if (!visible) return;
-    const t = (now - t0) / 1000;
-    ctx.clearRect(0, 0, W, H);
-    ctx.globalCompositeOperation = 'lighter';
-    for (const wm of worms) drawWorm(wm, t);
-    for (const c of creatures) drawCreature(c, t);
-    ctx.globalCompositeOperation = 'source-over';
-    if (!reduce) raf = requestAnimationFrame(frame);
+    const dt = Math.min((now - last) / 1000, 0.1); last = now;
+    acc += dt;
+    while (acc >= DT) {
+      step(); acc -= DT; steps++;
+      // Safety: reseed if the glider died, blew up, or drifted too long.
+      const m = mass();
+      if (m < 3 || m > GW * GH * 0.5 || steps > 1200) { seed(); steps = 0; }
+    }
+    draw();
+    if (!reduce) raf = requestAnimationFrame(loop);
   }
-  function start() { if (!raf) { t0 = performance.now() - 1000; raf = requestAnimationFrame(frame); } }
+  function start() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); } }
 
-  const io = new IntersectionObserver((entries) => {
-    visible = entries[0].isIntersecting;
-    cvs.classList.toggle('on', visible);
-    if (visible) start();
-  }, { threshold: 0.12 });
+  const io = new IntersectionObserver((e) => {
+    visible = e[0].isIntersecting;
+    if (visible) { if (reduce) { step(); draw(); } else start(); }
+  }, { threshold: 0.15 });
   io.observe(section);
 
-  window.addEventListener('resize', () => { resize(); seed(); if (visible) { ctx.clearRect(0,0,W,H); start(); } });
+  resize();
+  window.addEventListener('resize', resize);
 })();
 </script>
 </body>
