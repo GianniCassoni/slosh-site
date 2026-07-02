@@ -69,6 +69,14 @@
     opacity: 0; transition: opacity .6s ease;
   }
 
+  /* Lenia "coherent element" + worm-soliton field behind the Research interests
+     section — fades in only while that section is on screen. */
+  #lenia-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    opacity: 0; transition: opacity .9s ease; filter: blur(0.4px);
+  }
+  #lenia-bg.on { opacity: 1; }
+
   /* The interactive demo occupies the first screen; the page scrolls past it. */
   #demo { position: relative; z-index: 1; width: 100%; height: 100vh; height: 100dvh; overflow: hidden; }
   #scene { position: absolute; inset: 0; touch-action: none; }
@@ -275,6 +283,7 @@
 </head>
 <body>
 <div id="earth-bg"></div>
+<canvas id="lenia-bg"></canvas>
 <div id="grid-bg"></div>
 
 <nav id="nav">
@@ -499,6 +508,39 @@
       <span class="tag">Firebase</span><span class="tag">SolidWorks / Inventor</span>
       <span class="tag">Local LLMs &amp; multi-agent systems</span>
     </div>
+  </section>
+
+  <section class="block" id="interests">
+    <h2>Research interests</h2>
+    <p class="lead">
+      Beyond spaceflight fluid dynamics, I am drawn to <strong>computational nonlinear dynamics and
+      complex systems</strong>&nbsp;&mdash; how coherent, self-sustaining structures emerge from simple
+      local rules, and when a high-dimensional system genuinely admits a faithful low-dimensional
+      description. It is the same question that runs through my sloshing work, seen from the other side.
+    </p>
+    <div class="grid2">
+      <div class="card">
+        <div class="role">Coherent structures &amp; closure</div>
+        <h3>When is a reduced model actually closed?</h3>
+        <p>I study coherent elements in continuous cellular automata (Lenia) and in fluid&ndash;structure
+           systems through a <em>closure residual</em>: a forward-pass&ndash;only diagnostic that measures
+           whether a compressed feature evolves on its own, weakly coupled to the unresolved degrees of
+           freedom. It turns &ldquo;is this reduced description valid?&rdquo; into a number you can compute.</p>
+      </div>
+      <div class="card">
+        <div class="role">Complex systems &rarr; learning systems</div>
+        <h3>From gliders to steering directions</h3>
+        <p>The same closure idea travels into machine learning: I am exploring the closure residual as a
+           robustness diagnostic for activation-steering directions in large language models&nbsp;&mdash;
+           quantifying whether a direction expresses a capability consistently across inputs, using only
+           forward passes on a single consumer GPU.</p>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:16px">
+      Recurring themes: emergent coherent structures (Lenia gliders, tube/worm solitons), method-of-slices
+      reduction of travelling structures, bifurcation and stability analysis, and <em>dynamical</em> rather
+      than purely algebraic criteria for when a compressed model stays faithful.
+    </p>
   </section>
 
   <section class="block" id="contact">
@@ -1320,6 +1362,131 @@ fetch('data/models.json')
   document.getElementById('li-prev').addEventListener('click', () => go(idx - 1));
   document.getElementById('li-next').addEventListener('click', () => go(idx + 1));
   go(0);
+})();
+</script>
+
+<script>
+// ---------------------------------------------------------------------------
+// Research-interests background: drifting Lenia-style coherent "creatures"
+// (soft concentric-ring blobs) plus a slow worm/tube soliton snaking across.
+// A stylised evocation of the Lenia + tube-soliton work — pure canvas 2D, it
+// only animates while the #interests section is on screen (perf + battery).
+// ---------------------------------------------------------------------------
+(function initLeniaField() {
+  const cvs = document.getElementById('lenia-bg');
+  const section = document.getElementById('interests');
+  if (!cvs || !section) return;
+  const ctx = cvs.getContext('2d');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let W = 0, H = 0, dpr = 1, mobile = false;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    mobile = W < 620;
+    cvs.width = Math.round(W * dpr);
+    cvs.height = Math.round(H * dpr);
+    cvs.style.width = W + 'px';
+    cvs.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+
+  // Colour ramp for a Lenia creature: transparent core-out to blue → orange → beige.
+  // Each "shell" is a ring so the blobs read as organised structures, not plain dots.
+  function makeCreature() {
+    return {
+      x: Math.random() * W, y: Math.random() * H,
+      r: (mobile ? 60 : 90) + Math.random() * (mobile ? 40 : 80),
+      // Slow wander driven by two incommensurate phases per axis.
+      px: Math.random() * 6.28, py: Math.random() * 6.28,
+      sx: 0.10 + Math.random() * 0.16, sy: 0.10 + Math.random() * 0.16,
+      ax: 26 + Math.random() * 34, ay: 26 + Math.random() * 34,
+      spin: (Math.random() * 2 - 1) * 0.3, phase: Math.random() * 6.28,
+    };
+  }
+  let creatures = [];
+  function seed() { creatures = Array.from({ length: mobile ? 4 : 6 }, makeCreature); }
+  seed();
+
+  // A worm/tube soliton: a thick glowing filament that undulates and drifts.
+  const worms = [
+    { y: 0.42, amp: 60, k: 0.011, spd: 0.35, phase: 0, w: mobile ? 22 : 34, dir: 1 },
+    { y: 0.68, amp: 44, k: 0.014, spd: 0.24, phase: 3.1, w: mobile ? 16 : 26, dir: -1 },
+  ];
+
+  function drawCreature(c, t) {
+    const x = c.x + Math.sin(t * c.sx + c.px) * c.ax;
+    const y = c.y + Math.cos(t * c.sy + c.py) * c.ay;
+    const pulse = 1 + 0.08 * Math.sin(t * 0.6 + c.phase);
+    const r = c.r * pulse;
+    const g = ctx.createRadialGradient(x, y, r * 0.05, x, y, r);
+    // Concentric alternating rings = the Lenia signature.
+    g.addColorStop(0.00, 'rgba(240,236,222,0.16)');
+    g.addColorStop(0.18, 'rgba(236,122,44,0.16)');
+    g.addColorStop(0.34, 'rgba(27,36,80,0.02)');
+    g.addColorStop(0.50, 'rgba(236,122,44,0.13)');
+    g.addColorStop(0.66, 'rgba(27,36,80,0.02)');
+    g.addColorStop(0.82, 'rgba(110,134,200,0.10)');
+    g.addColorStop(1.00, 'rgba(27,36,80,0.0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 6.2832);
+    ctx.fill();
+  }
+
+  function drawWorm(wm, t) {
+    const steps = 46;
+    const drift = (t * wm.spd * wm.dir * 40) % (W + 400);
+    const x0 = wm.dir > 0 ? -200 + drift : W + 200 - drift;
+    const baseY = wm.y * H;
+    const pts = [];
+    for (let i = 0; i <= steps; i++) {
+      const px = x0 + wm.dir * (i / steps) * (W + 400);
+      const py = baseY
+        + Math.sin(px * wm.k + t * 0.8 + wm.phase) * wm.amp
+        + Math.sin(px * wm.k * 2.3 + t * 0.5) * wm.amp * 0.3;
+      pts.push([px, py]);
+    }
+    // Outer translucent tube.
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(236,122,44,0.10)';
+    ctx.lineWidth = wm.w;
+    stroke(pts);
+    // Inner bright core.
+    ctx.strokeStyle = 'rgba(240,236,222,0.16)';
+    ctx.lineWidth = wm.w * 0.34;
+    stroke(pts);
+  }
+  function stroke(pts) {
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.stroke();
+  }
+
+  let visible = false, t0 = performance.now(), raf = 0;
+  function frame(now) {
+    raf = 0;
+    if (!visible) return;
+    const t = (now - t0) / 1000;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    for (const wm of worms) drawWorm(wm, t);
+    for (const c of creatures) drawCreature(c, t);
+    ctx.globalCompositeOperation = 'source-over';
+    if (!reduce) raf = requestAnimationFrame(frame);
+  }
+  function start() { if (!raf) { t0 = performance.now() - 1000; raf = requestAnimationFrame(frame); } }
+
+  const io = new IntersectionObserver((entries) => {
+    visible = entries[0].isIntersecting;
+    cvs.classList.toggle('on', visible);
+    if (visible) start();
+  }, { threshold: 0.12 });
+  io.observe(section);
+
+  window.addEventListener('resize', () => { resize(); seed(); if (visible) { ctx.clearRect(0,0,W,H); start(); } });
 })();
 </script>
 </body>
