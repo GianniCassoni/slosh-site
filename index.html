@@ -1421,7 +1421,9 @@ fetch('data/models.json')
   // --- Lenia parameters (canonical Orbium) ---
   const R = 13, T = 10, MU = 0.15, SIGMA = 0.015;
   const mobile = window.innerWidth < 620;
-  const GW = mobile ? 64 : 88, GH = mobile ? 44 : 56;   // torus grid
+  // The grid is a torus: to stop the kernel (reach R) from wrapping into the
+  // glider's own body (~20 cells) it must exceed 20 + 2R = 46 in each axis.
+  const GW = mobile ? 76 : 100, GH = mobile ? 60 : 64;   // torus grid
 
   // Canonical Orbium seed (20x20), values in [0,1].
   const ORBIUM = [
@@ -1448,18 +1450,24 @@ fetch('data/models.json')
   ];
 
   // Precompute the normalized exponential shell kernel as sparse offsets.
-  const koff = [];
+  // Negligible-weight offsets (the exp shell is concentrated near d=0.5) are
+  // pruned so the per-cell convolution stays cheap enough for phones.
+  const raw = [];
   let ksum = 0;
   for (let dy = -R; dy <= R; dy++) {
     for (let dx = -R; dx <= R; dx++) {
       const d = Math.sqrt(dx * dx + dy * dy) / R;
       if (d > 0 && d < 1) {
         const w = Math.exp(4 - 1 / (d * (1 - d)));  // exp core, alpha=4
-        koff.push([dx, dy, w]); ksum += w;
+        raw.push([dx, dy, w]); ksum += w;
       }
     }
   }
-  for (const o of koff) o[2] /= ksum;
+  const koff = [];
+  let ksum2 = 0;
+  const thresh = ksum * 1e-4;
+  for (const o of raw) if (o[2] >= thresh) { koff.push(o); ksum2 += o[2]; }
+  for (const o of koff) o[2] /= ksum2;
 
   let A = new Float32Array(GW * GH);
   let B = new Float32Array(GW * GH);
