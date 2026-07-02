@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Gianni Cassoni — Microgravity Sloshing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #232e6b;
+    --bg2: #1b2450;
+    --panel: rgba(240,236,222,0.06);
+    --panel-border: rgba(240,236,222,0.22);
+    --text: #f0ecde;
+    --muted: rgba(240,236,222,0.66);
+    --accent: #ec7a2c;
+    --accent2: rgba(236,122,44,0.9);
+    --active: #ec7a2c;
+    --grid: rgba(240,236,222,0.10);
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --serif: "Instrument Serif", "Times New Roman", Georgia, serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; background: var(--bg); }
+  html, body {
+    margin: 0; overflow-x: hidden;
+    color: var(--text);
+    font-family: var(--mono);
+    -webkit-font-smoothing: antialiased;
+  }
+  body { background: transparent; }
+  /* Faint technical grid behind the scrollable content (below the demo). */
+  #grid-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0;
+    transition: opacity .6s ease;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 140px 140px;
+  }
+
+  /* Fixed top navigation so visitors know to scroll */
+  #nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px clamp(14px, 4vw, 34px);
+    background: linear-gradient(180deg, rgba(35,46,107,.88) 0%, rgba(35,46,107,0) 100%);
+    backdrop-filter: blur(3px);
+    pointer-events: none;
+  }
+  #nav a { pointer-events: auto; text-decoration: none; color: var(--text); }
+  #nav .brand {
+    font-family: var(--serif); font-size: clamp(17px, 2.4vw, 22px);
+    letter-spacing: .5px; line-height: 1; text-transform: uppercase;
+  }
+  #nav .links { display: flex; gap: clamp(12px, 2.4vw, 30px); align-items: center; }
+  #nav .links a {
+    font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--muted); transition: color .15s;
+  }
+  #nav .links a:hover { color: var(--text); }
+  @media (max-width: 620px) { #nav .links a.hide-sm { display: none; } }
+
+  /* Scroll-driven Earth in the background of the scrollable content */
+  #earth-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    opacity: 0; transition: opacity .6s ease;
+  }
+
+  /* The interactive demo occupies the first screen; the page scrolls past it. */
+  #demo { position: relative; z-index: 1; width: 100%; height: 100vh; height: 100dvh; overflow: hidden; }
+  #scene { position: absolute; inset: 0; touch-action: none; }
+  #title {
+    position: absolute; top: 52px; left: 0; right: 0; padding: 8px 12px 4px;
+    text-align: center; pointer-events: none; z-index: 5;
+  }
+  #title h1 { margin: 0; font-family: var(--serif); font-size: 20px; font-weight: 400; letter-spacing: .4px; }
+  #title p { margin: 2px 0 0; font-size: 11px; color: var(--muted); }
+  #hud {
+    position: absolute; top: 92px; left: 10px; z-index: 5; pointer-events: none;
+    font-variant-numeric: tabular-nums; font-size: 12px; color: var(--muted);
+    line-height: 1.5; text-shadow: 0 1px 2px rgba(0,0,0,.6);
+  }
+  #hud b { color: var(--text); font-weight: 600; }
+
+  /* Bottom control panel */
+  #panel {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+    background: linear-gradient(180deg, rgba(27,36,80,0) 0%, rgba(27,36,80,.88) 22%, rgba(27,36,80,.97) 100%);
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    backdrop-filter: blur(6px);
+  }
+  .row { display: flex; align-items: center; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
+  .row .lab { width: 74px; flex: 0 0 74px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .btns { display: flex; gap: 6px; flex: 1 1 auto; flex-wrap: wrap; }
+  button.preset {
+    flex: 1 1 0; min-width: 58px; padding: 7px 4px; border-radius: 9px;
+    border: 1px solid var(--panel-border); background: var(--panel); color: var(--text);
+    font-size: 11px; line-height: 1.15; cursor: pointer; transition: all .12s;
+  }
+  button.preset small { display: block; color: var(--muted); font-size: 10px; }
+  button.preset.on { background: var(--accent); border-color: var(--accent); color: #1b2450; }
+  button.preset.on small { color: rgba(27,36,80,.8); }
+  button.preset:disabled { opacity: .32; cursor: not-allowed; }
+
+  .slider { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; }
+  .slider input { flex: 1 1 auto; accent-color: var(--accent2); }
+  .slider .val { width: 46px; text-align: right; font-size: 12px; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  /* Thruster D-pad + action buttons */
+  #controls {
+    position: absolute; z-index: 6; bottom: 190px; width: 100%;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding: 0 16px; pointer-events: none;
+  }
+  .pad { display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); gap: 6px; pointer-events: auto; }
+  .pad button, .actions button {
+    border: 1px solid var(--panel-border); background: var(--panel); color: var(--text);
+    border-radius: 12px; font-size: 20px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; user-select: none;
+  }
+  .pad button:active, .pad button.press { background: var(--active); border-color: var(--active); color: #1b2450; }
+  .pad .c { visibility: hidden; }
+  .actions { display: flex; flex-direction: column; gap: 6px; pointer-events: auto; }
+  .actions button { width: 52px; height: 52px; font-size: 13px; }
+  #status { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:8;
+            background:rgba(0,0,0,.6); padding:14px 20px; border-radius:10px; font-size:13px; display:none; }
+  @media (max-width: 480px) {
+    .pad { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); }
+    .actions button { width: 46px; height: 46px; }
+  }
+
+  /* Scroll cue at the bottom of the demo */
+  #scroll-cue {
+    position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); z-index: 7;
+    color: var(--muted); font-size: 12px; text-decoration: none; letter-spacing: .5px;
+    pointer-events: auto; animation: bob 1.8s ease-in-out infinite; text-shadow: 0 1px 3px rgba(0,0,0,.7);
+  }
+  @keyframes bob { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(5px); } }
+
+  /* Scrollable content (CV / research / ads) */
+  main { position: relative; z-index: 1; max-width: 940px; margin: 0 auto; padding: 0 22px 96px; }
+  .eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 11px; color: var(--accent2); }
+  .hero { padding: 96px 0 8px; text-align: center; }
+  .hero h1 { font-family: var(--serif); font-weight: 400; margin: 10px 0 6px; font-size: clamp(46px, 9vw, 92px); line-height: .98; letter-spacing: .5px; }
+  .hero .subtitle { color: var(--muted); font-size: clamp(14px, 2.6vw, 18px); margin: 0; }
+  .hero .tagline { color: var(--text); font-size: 14.5px; line-height: 1.75; max-width: 640px; margin: 20px auto 0; }
+  .cta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 28px 0 8px; }
+  .cta a {
+    text-decoration: none; padding: 11px 18px; border-radius: 2px; font-size: 12px; letter-spacing: 1px;
+    text-transform: uppercase; border: 1px solid var(--panel-border); color: var(--text);
+    background: transparent; transition: all .15s;
+  }
+  .cta a.primary { background: var(--accent); border-color: var(--accent); color: #1b2450; }
+  .cta a:hover { border-color: var(--text); }
+
+  section.block { padding: 54px 0 6px; border-top: 1px solid var(--panel-border); }
+  .block h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(28px, 5vw, 40px); margin: 10px 0 14px; color: var(--text); letter-spacing: .4px; }
+  .block p.lead { color: var(--muted); font-size: 15px; line-height: 1.75; margin: 0 0 14px; }
+  .block p.lead a { color: var(--accent); text-decoration: none; }
+  .block p.lead a:hover { text-decoration: underline; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 680px) { .grid2 { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 4px;
+    padding: 16px 18px; backdrop-filter: blur(2px);
+  }
+  .card h3 { margin: 0 0 6px; font-size: 15px; color: var(--text); }
+  .card p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.6; }
+  .card .role { color: var(--accent2); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+
+  /* Interactive LinkedIn post carousel */
+  .li-carousel { position: relative; margin: 18px 0 4px; max-width: 560px; }
+  .li-viewport {
+    overflow: hidden; border: 1px solid var(--panel-border); border-radius: 4px;
+    background: var(--panel);
+  }
+  .li-track { display: flex; transition: transform .4s ease; }
+  .li-slide { flex: 0 0 100%; }
+  .li-slide iframe { display: block; width: 100%; height: 560px; border: 0; }
+  @media (max-width: 480px) { .li-slide iframe { height: 620px; } }
+  .li-nav {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 4;
+    width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
+    border: 1px solid var(--panel-border); background: rgba(27,36,80,.82);
+    color: var(--text); font-size: 20px; line-height: 1; display: flex;
+    align-items: center; justify-content: center; transition: border-color .15s, color .15s;
+  }
+  .li-nav:hover { border-color: var(--accent); color: var(--accent); }
+  .li-nav.prev { left: -8px; }
+  .li-nav.next { right: -8px; }
+  .li-dots { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+  .li-dots button {
+    width: 8px; height: 8px; border-radius: 50%; padding: 0; cursor: pointer;
+    border: 1px solid var(--panel-border); background: transparent; transition: background .15s, border-color .15s;
+  }
+  .li-dots button.on { background: var(--accent); border-color: var(--accent); }
+
+  /* Featured paper cards (pantheon-style boxes linked to the PDF) */
+  .papers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0 4px; }
+  @media (max-width: 680px) { .papers { grid-template-columns: 1fr; } }
+  a.paper {
+    display: flex; flex-direction: column; text-decoration: none; color: var(--text);
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 4px;
+    padding: 18px 18px 16px; backdrop-filter: blur(2px); transition: border-color .15s, transform .15s;
+  }
+  a.paper:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .paper .badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .paper .badge {
+    font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px;
+    border-radius: 2px; border: 1px solid var(--panel-border); color: var(--muted);
+  }
+  .paper .badge.new { background: var(--accent); border-color: var(--accent); color: #1b2450; }
+  .paper h3 { font-family: var(--serif); font-weight: 400; font-size: 21px; line-height: 1.15;
+              margin: 0 0 8px; color: var(--text); }
+  .paper .authors { color: var(--muted); font-size: 12.5px; line-height: 1.5; margin: 0 0 12px; }
+  .paper .authors b { color: var(--text); font-weight: 500; }
+  .paper .foot { display: flex; align-items: center; justify-content: space-between;
+                 margin-top: auto; padding-top: 10px; border-top: 1px solid var(--panel-border); }
+  .paper .date { color: var(--muted); font-size: 12px; }
+  .paper .open { color: var(--accent); font-size: 12px; letter-spacing: .5px; }
+
+  ul.pubs { list-style: none; padding: 0; margin: 0; }
+  ul.pubs li { padding: 11px 0; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 14px; line-height: 1.55; }
+  ul.pubs li:last-child { border-bottom: none; }
+  ul.pubs .venue { color: var(--muted); font-size: 12.5px; }
+  ul.pubs a { color: var(--accent); text-decoration: none; }
+  ul.pubs a:hover { text-decoration: underline; }
+  .subhead { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent2); margin: 18px 0 4px; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag { font-size: 12.5px; padding: 6px 11px; border-radius: 20px; border: 1px solid var(--panel-border);
+         background: var(--panel); color: var(--text); }
+
+  .contact { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
+  .contact a, .contact span {
+    display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
+    color: var(--text); font-size: 14px; padding: 9px 14px; border-radius: 10px;
+    border: 1px solid var(--panel-border); background: var(--panel);
+  }
+  .contact a:hover { border-color: var(--accent); }
+  footer.legal { margin-top: 40px; color: var(--muted); font-size: 11.5px; line-height: 1.6; text-align: center; }
+</style>
+</head>
+<body>
+<div id="earth-bg"></div>
+<div id="grid-bg"></div>
+
+<nav id="nav">
+  <a class="brand" href="#top">Gianni&nbsp;Cassoni</a>
+  <div class="links">
+    <a href="#demo">Demo</a>
+    <a class="hide-sm" href="#about">About</a>
+    <a class="hide-sm" href="#research">Research</a>
+    <a href="#publications">Publications</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
+
+<section id="demo">
+  <div id="scene"></div>
+  <div id="title">
+    <h1>Spacecraft rigid-body + capillary slosh</h1>
+    <p>coupled reduced-order model &middot; hold the thruster pads to perturb the tank</p>
+  </div>
+  <div id="hud"></div>
+  <div id="status"></div>
+
+  <div id="controls">
+    <div class="pad">
+      <div class="c"></div>
+      <button data-force="up">▲</button>
+      <div class="c"></div>
+      <button data-force="left">◀</button>
+      <div class="c"></div>
+      <button data-force="right">▶</button>
+      <div class="c"></div>
+      <button data-force="down">▼</button>
+      <div class="c"></div>
+    </div>
+    <div class="actions">
+      <button id="btn-reset">Reset</button>
+      <button id="btn-pause">Pause</button>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div class="row">
+      <div class="lab">Gravity</div>
+      <div class="btns" id="gravity-btns"></div>
+    </div>
+    <div class="row">
+      <div class="lab">Propellant</div>
+      <div class="btns" id="propellant-btns"></div>
+    </div>
+    <div class="row">
+      <div class="lab">Time ×</div>
+      <div class="slider"><input id="speed" type="range" min="0.25" max="5" step="0.25" value="2" /><span class="val" id="speed-val">2.0×</span></div>
+    </div>
+  </div>
+  <a id="scroll-cue" href="#about">▼ research &amp; publications</a>
+</section>
+
+<main>
+  <header class="hero" id="top">
+    <div class="eyebrow">Aeronautical Engineering &middot; PhD Candidate</div>
+    <h1>Gianni Cassoni</h1>
+    <p class="subtitle">Microgravity propellant sloshing &middot; in-orbit refuelling &amp; servicing</p>
+    <p class="tagline">
+      The interactive model above is a coupled reduced-order simulation of spacecraft rigid-body
+      motion and capillary propellant sloshing. Drag to orbit the view and use the thruster pads to
+      perturb the tank across gravity levels (from Earth to capillary Bond numbers), propellants and
+      fill ratios &mdash; part of my PhD research on in-orbit refuelling and servicing.
+    </p>
+    <div class="cta">
+      <a class="primary" href="mailto:giannicassoni@yahoo.it">Contact me</a>
+      <a href="https://www.linkedin.com/in/giannicassoni" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://www.researchgate.net/profile/Gianni-Cassoni" target="_blank" rel="noopener">ResearchGate</a>
+      <a href="https://github.com/GianniCassoni" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </header>
+
+  <section class="block" id="about">
+    <h2>About</h2>
+    <p class="lead">
+      I am a PhD candidate developing models of microgravity sloshing for in-orbit refuelling and
+      servicing. My work spans semi-analytical formulations for capillary sloshing and a coupled
+      OpenFOAM&ndash;MBDyn framework for ullage-impact loads on spacecraft structures, backed by
+      high-performance computing on CINECA Leonardo. I also supervise thesis students in technical
+      work and research planning.
+    </p>
+    <div class="grid2">
+      <div class="card">
+        <div class="role">Dec 2024 &ndash; Present</div>
+        <h3>Thales Alenia Space &amp; Roma Tre University</h3>
+        <p>PhD Candidate. Semi-analytical capillary sloshing models and a coupled
+           OpenFOAM&ndash;MBDyn framework for ullage-impact loads; thesis-student supervision.</p>
+      </div>
+      <div class="card">
+        <div class="role">Jul 2022 &ndash; Present</div>
+        <h3>Politecnico di Milano</h3>
+        <p>Fellow Researcher. Rotorcraft fleet forecasting to 2050, ATTILA tiltrotor aeroelastic
+           flutter (with Leonardo, NLR, DLR), and rotorcraft&ndash;pilot coupling data analysis.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="research">
+    <h2>Research highlight</h2>
+    <p class="lead">
+      <strong>Curvature-corrected sloshing spectra for microgravity.</strong> Classical slosh models
+      assume a flat interface. In microgravity, surface tension dominates and the equilibrium meniscus
+      is strongly curved, shifting the natural frequencies and mode shapes. The demo above evaluates a
+      reduced-order model built from a Young&ndash;Laplace equilibrium and a modal eigen-solve, then
+      time-steps the coupled rigid-body + slosh dynamics live in your browser. Featured update on
+      <a href="https://www.linkedin.com/feed/update/urn:li:activity:7468333717594333184/" target="_blank" rel="noopener">LinkedIn</a>.
+    </p>
+
+    <div class="papers">
+      <a class="paper" href="https://www.researchgate.net/publication/405976842_Coupled_Fluid-Multibody_Simulation_of_Ullage_Impact_Loads_on_Spacecraft" target="_blank" rel="noopener">
+        <div class="badges">
+          <span class="badge new">New</span>
+          <span class="badge">Preprint</span>
+          <span class="badge">File available</span>
+        </div>
+        <h3>Coupled Fluid&ndash;Multibody Simulation of Ullage Impact Loads on Spacecraft</h3>
+        <p class="authors"><b>G. Cassoni</b>, J. Serafini, F. Gennari, P. Masarati</p>
+        <div class="foot"><span class="date">May 2026</span><span class="open">Read PDF &rarr;</span></div>
+      </a>
+      <a class="paper" href="https://www.researchgate.net/publication/404396550_Curvature-corrected_sloshing_spectra_for_cylindrical_tanks_in_microgravity" target="_blank" rel="noopener">
+        <div class="badges">
+          <span class="badge new">New</span>
+          <span class="badge">Preprint</span>
+          <span class="badge">File available</span>
+        </div>
+        <h3>Curvature-corrected sloshing spectra for cylindrical tanks in microgravity</h3>
+        <p class="authors"><b>G. Cassoni</b></p>
+        <div class="foot"><span class="date">April 2026</span><span class="open">Read PDF &rarr;</span></div>
+      </a>
+    </div>
+
+    <div class="li-carousel">
+      <div class="li-viewport">
+        <div class="li-track" id="li-track">
+          <div class="li-slide">
+            <iframe src="https://www.linkedin.com/embed/feed/update/urn:li:activity:7468333717594333184"
+                    title="Gianni Cassoni — featured research update on LinkedIn"
+                    loading="lazy"
+                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>
+          </div>
+          <div class="li-slide">
+            <iframe src="https://www.linkedin.com/embed/feed/update/urn:li:activity:7442295738686115840"
+                    title="Gianni Cassoni — research update on LinkedIn"
+                    loading="lazy"
+                    allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>
+          </div>
+        </div>
+      </div>
+      <button class="li-nav prev" id="li-prev" aria-label="Previous post">&lsaquo;</button>
+      <button class="li-nav next" id="li-next" aria-label="Next post">&rsaquo;</button>
+      <div class="li-dots" id="li-dots"></div>
+    </div>
+  </section>
+
+  <section class="block" id="publications">
+    <h2>Selected publications</h2>
+
+    <div class="subhead">Journal articles</div>
+    <ul class="pubs">
+      <li>Cassoni, G., Serafini, J., Gennari, F., &amp; Masarati, P. (2026). <em>Coupled Fluid&ndash;Multibody
+          Simulation of Ullage Impact Loads on Spacecraft.</em>
+          <span class="venue">Preprint, under review at Multibody System Dynamics.</span>
+          <a href="https://doi.org/10.21203/rs.3.rs-9858850/v1" target="_blank" rel="noopener">DOI</a></li>
+      <li>Cassoni, G. <em>Curvature-corrected sloshing spectra for cylindrical tanks in microgravity.</em>
+          <span class="venue">Preprint (2026)</span></li>
+      <li>Cassoni, G., Cocco, A., Tamer, A., Zanoni, A., &amp; Masarati, P. (2024). <em>Rotorcraft stability
+          analysis using Lyapunov characteristic exponents estimated from multibody dynamics.</em>
+          <span class="venue">CEAS Aeronautical Journal, 15(3), 703&ndash;719.</span>
+          <a href="https://doi.org/10.1007/s13272-024-00724-y" target="_blank" rel="noopener">DOI</a></li>
+      <li>Cassoni, G., Zanoni, A., Tamer, A., &amp; Masarati, P. (2023). <em>Stability analysis of nonlinear
+          rotating systems using Lyapunov characteristic exponents estimated from multibody dynamics.</em>
+          <span class="venue">Journal of Computational and Nonlinear Dynamics, 18(8), 081002.</span>
+          <a href="https://doi.org/10.1115/1.4056591" target="_blank" rel="noopener">DOI</a></li>
+      <li>Trevisi, F., Cassoni, G., Gaunaa, M., &amp; Fagiano, L. M. (2026). <em>Concurrent aerodynamic design
+          of the wing and the turbines of airborne wind energy systems.</em>
+          <span class="venue">Wind Energy Science, 11(1), 195&ndash;216.</span>
+          <a href="https://doi.org/10.5194/wes-11-195-2026" target="_blank" rel="noopener">DOI</a></li>
+      <li>De Vita, P., Cassoni, G., Morandini, M., Masarati, P., Fonte, F., Favale, M., &amp; van&rsquo;t Hoff, S.
+          (2026). <em>Numerical interpretation of whirl flutter in a tiltrotor wind-tunnel model using
+          mid-fidelity aerodynamics and mechanical friction.</em>
+          <span class="venue">CEAS Aeronautical Journal.</span>
+          <a href="https://doi.org/10.1007/s13272-026-00966-y" target="_blank" rel="noopener">DOI</a></li>
+    </ul>
+
+    <div class="subhead">Conference papers &amp; proceedings</div>
+    <ul class="pubs">
+      <li>Cassoni, G., Gennari, F., Serafini, J., &amp; Masarati, P. <em>Curvature-Corrected Sloshing Spectrum via
+          Diffeomorphism of the Zakharov&ndash;Craig&ndash;Sulem Formulation for Microgravity Applications.</em>
+          <span class="venue">NODYCON 2026, Rome, Italy, Sep 20&ndash;23, 2026.</span></li>
+      <li>Cassoni, G., Nerattini, A., Colella, A., Gennari, F., Serafini, J., &amp; Masarati, P. <em>On the CFD
+          Fidelity Requirements for Assessing Classical Slosh Models in On-Orbit Servicing Regimes.</em>
+          <span class="venue">ESA GNC &amp; ICATT, Seville, Spain, Sep 28&ndash;Oct 2, 2026.</span></li>
+      <li>Cassoni, G., Madonna, D. P., Colella, A., Gennari, F., Serafini, J., &amp; Masarati, P.
+          <em>Reduced-Order Modeling of Propellant Sloshing via Differential Variational Inequalities for
+          On-Orbit Refueling Docking Missions.</em>
+          <span class="venue">77th International Astronautical Congress, Antalya, T&uuml;rkiye, Oct 5&ndash;9, 2026.</span></li>
+      <li>Cassoni, G., Cocco, A., Tamer, A., Zanoni, A., &amp; Masarati, P. (2023). <em>Tiltrotor whirl-flutter
+          stability analysis using the maximum Lyapunov characteristic exponent estimated from time series.</em>
+          <span class="venue">AIDAA XXVII International Congress (2023), vol. 37, pp. 30&ndash;33.</span>
+          <a href="https://doi.org/10.21741/9781644902813-7" target="_blank" rel="noopener">DOI</a></li>
+      <li>Zanoni, A., Cassoni, G., Talamo, C., Marchesoli, D., Zilletti, M., Colombo, F., &amp; Masarati, P.
+          (2024). <em>An uncertainty propagation approach to collective bounce rotorcraft&ndash;pilot couplings
+          analysis.</em> <span class="venue">80th Annual Forum, Vertical Flight Society (2024).</span>
+          <a href="https://doi.org/10.4050/F-0080-2024-1321" target="_blank" rel="noopener">DOI</a></li>
+      <li>Cassoni, G., Zanoni, A., Tamer, A., &amp; Masarati, P. (2022). <em>Stability of rotorcraft ground
+          resonance by estimating Lyapunov characteristic exponents from multibody dynamics.</em>
+          <span class="venue">ASME IDETC/CIE 2022.</span>
+          <a href="https://doi.org/10.1115/DETC2022-88995" target="_blank" rel="noopener">DOI</a></li>
+    </ul>
+  </section>
+
+  <section class="block" id="awards">
+    <h2>Awards &amp; competitive funding</h2>
+    <div class="card">
+      <div class="role">ISCRA-C CINECA HPC Allocation 2026</div>
+      <p>100,000 CPU core-hours on Leonardo Data Centric and 10,000 GPU-hours on Leonardo Booster for
+         high-performance studies on microgravity sloshing and reduced-order modeling.</p>
+    </div>
+  </section>
+
+  <section class="block" id="skills">
+    <h2>Technical skills</h2>
+    <div class="tags">
+      <span class="tag">Python</span><span class="tag">MATLAB</span><span class="tag">C++</span>
+      <span class="tag">C</span><span class="tag">Fortran</span><span class="tag">Julia</span>
+      <span class="tag">CUDA</span><span class="tag">MPI / HPC</span><span class="tag">LaTeX</span>
+      <span class="tag">OpenFOAM (VOF, interFoam)</span><span class="tag">MBDyn</span>
+      <span class="tag">deal.II</span><span class="tag">SU2</span><span class="tag">SPARTA</span>
+      <span class="tag">Smilei (PIC)</span><span class="tag">Dakota</span>
+      <span class="tag">Docker / Kubernetes</span><span class="tag">Google Cloud</span>
+      <span class="tag">Firebase</span><span class="tag">SolidWorks / Inventor</span>
+      <span class="tag">Local LLMs &amp; multi-agent systems</span>
+    </div>
+  </section>
+
+  <section class="block" id="contact">
+    <h2>Contact</h2>
+    <p class="lead">Como, Italy &middot; open to collaboration on microgravity fluid dynamics,
+       reduced-order modeling and coupled CFD&ndash;multibody simulation.</p>
+    <div class="contact">
+      <a href="mailto:giannicassoni@yahoo.it">✉ giannicassoni@yahoo.it</a>
+      <a href="https://www.linkedin.com/in/giannicassoni" target="_blank" rel="noopener">in LinkedIn</a>
+      <a href="https://www.researchgate.net/profile/Gianni-Cassoni" target="_blank" rel="noopener">RG ResearchGate</a>
+      <a href="https://github.com/GianniCassoni" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <footer class="legal">
+      &copy; 2026 Gianni Cassoni. Interactive demo: coupled reduced-order model of spacecraft
+      rigid-body motion and capillary propellant sloshing.
+    </footer>
+  </section>
+</main>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ---------------------------------------------------------------------------
+// Small dense linear solver (Gaussian elimination, partial pivot). n <= ~8.
+// ---------------------------------------------------------------------------
+function solveLinear(Ain, bin, n) {
+  const M = Ain.slice();
+  const x = bin.slice();
+  for (let col = 0; col < n; col++) {
+    let piv = col, maxv = Math.abs(M[col * n + col]);
+    for (let r = col + 1; r < n; r++) {
+      const v = Math.abs(M[r * n + col]);
+      if (v > maxv) { maxv = v; piv = r; }
+    }
+    if (piv !== col) {
+      for (let c = 0; c < n; c++) { const t = M[col * n + c]; M[col * n + c] = M[piv * n + c]; M[piv * n + c] = t; }
+      const t = x[col]; x[col] = x[piv]; x[piv] = t;
+    }
+    const diag = M[col * n + col];
+    for (let r = col + 1; r < n; r++) {
+      const f = M[r * n + col] / diag;
+      if (f !== 0) {
+        for (let c = col; c < n; c++) M[r * n + c] -= f * M[col * n + c];
+        x[r] -= f * x[col];
+      }
+    }
+  }
+  for (let r = n - 1; r >= 0; r--) {
+    let s = x[r];
+    for (let c = r + 1; c < n; c++) s -= M[r * n + c] * x[c];
+    x[r] = s / M[r * n + r];
+  }
+  return x;
+}
+
+// ---------------------------------------------------------------------------
+// Physics: faithful port of InteractiveSimulator (RK4 + per-sector block solve)
+// ---------------------------------------------------------------------------
+class Simulator {
+  constructor(config) {
+    this.config = config;
+    this.dryMass = 0;
+    this.forceAmp = config.lateral_force_amp;
+    this.zForceAmp = config.vertical_force_amp;
+    this.substeps = Math.max(1, config.substeps | 0);
+    this.zeta = config.modal_zeta;
+    this.lateral = null;
+    this.vertical = null;
+    this.t = 0;
+    this.state = null;
+    this.activeFx = 0;
+    this.activeFz = 0;
+  }
+
+  _prepSector(raw) {
+    const n = raw.n;
+    const omega = Float64Array.from(raw.omega);
+    const B = Float64Array.from(raw.B);
+    const s = {
+      n,
+      addedMass: raw.added_mass,
+      bodyProjection: Float64Array.from(raw.body_projection),
+      B, K: Float64Array.from(raw.K), omega,
+      shapeR: Float64Array.from(raw.shape_r),   // (n_r, n) row-major
+      modalDamping: new Float64Array(n * n),
+    };
+    this._recomputeDamping(s);
+    return s;
+  }
+
+  _recomputeDamping(s) {
+    // modal_damping = 0.5*(C+C^T), C = zeta*(B@Omega + Omega@B), Omega=diag(max(omega,1e-8)).
+    // Since B is symmetric and Omega diagonal, C[i][j] = zeta*B[i][j]*(om_i+om_j) (already symmetric).
+    const n = s.n, om = s.omega, B = s.B, z = this.zeta;
+    for (let i = 0; i < n; i++) {
+      const oi = Math.max(om[i], 1e-8);
+      for (let j = 0; j < n; j++) {
+        const oj = Math.max(om[j], 1e-8);
+        s.modalDamping[i * n + j] = z * B[i * n + j] * (oi + oj);
+      }
+    }
+  }
+
+  setPreset(preset) {
+    this.lateral = this._prepSector(preset.lateral);
+    this.vertical = this._prepSector(preset.vertical);
+    this.dryMass = preset.dry_mass;
+    this.nL = this.lateral.n;
+    this.nV = this.vertical.n;
+    this.state = new Float64Array(4 + 2 * this.nL + 2 * this.nV);
+    this.t = 0; this.activeFx = 0; this.activeFz = 0;
+  }
+
+  setZeta(z) {
+    this.zeta = z;
+    if (this.lateral) this._recomputeDamping(this.lateral);
+    if (this.vertical) this._recomputeDamping(this.vertical);
+  }
+
+  reset() { this.state.fill(0); this.t = 0; this.activeFx = 0; this.activeFz = 0; }
+
+  _sectorAccel(sector, rigidVel, forceCmd, modalState, modalVel, sOff) {
+    const n = sector.n;
+    const m = n + 1;
+    const block = new Float64Array(m * m);
+    block[0] = this.dryMass + sector.addedMass;
+    for (let j = 0; j < n; j++) {
+      block[0 * m + (1 + j)] = sector.bodyProjection[j];
+      block[(1 + j) * m + 0] = sector.bodyProjection[j];
+      for (let k = 0; k < n; k++) block[(1 + j) * m + (1 + k)] = sector.B[j * n + k];
+    }
+    const rhs = new Float64Array(m);
+    rhs[0] = forceCmd;   // body damping coeff = 0
+    for (let i = 0; i < n; i++) {
+      let acc = 0;
+      for (let k = 0; k < n; k++) acc += sector.K[i * n + k] * modalState[k] + sector.modalDamping[i * n + k] * modalVel[k];
+      rhs[1 + i] = -acc;
+    }
+    const sol = solveLinear(block, rhs, m);
+    return sol; // sol[0]=rigid acc, sol[1..]=modal ddot
+  }
+
+  _rhs(state, Fx, Fz, out) {
+    const nL = this.nL, nV = this.nV;
+    const xVel = state[1], zVel = state[3];
+    const aLat = state.subarray(4, 4 + nL);
+    const aLatDot = state.subarray(4 + nL, 4 + 2 * nL);
+    const aVert = state.subarray(4 + 2 * nL, 4 + 2 * nL + nV);
+    const aVertDot = state.subarray(4 + 2 * nL + nV, 4 + 2 * nL + 2 * nV);
+
+    const solL = this._sectorAccel(this.lateral, xVel, Fx, aLat, aLatDot);
+    const solV = this._sectorAccel(this.vertical, zVel, Fz, aVert, aVertDot);
+
+    out[0] = xVel;
+    out[1] = solL[0];
+    out[2] = zVel;
+    out[3] = solV[0];
+    let idx = 4;
+    for (let i = 0; i < nL; i++) out[idx++] = aLatDot[i];
+    for (let i = 0; i < nL; i++) out[idx++] = solL[1 + i];
+    for (let i = 0; i < nV; i++) out[idx++] = aVertDot[i];
+    for (let i = 0; i < nV; i++) out[idx++] = solV[1 + i];
+  }
+
+  advance(dt, Fx, Fz) {
+    const h = dt / this.substeps;
+    this.activeFx = Fx; this.activeFz = Fz;
+    const n = this.state.length;
+    const k1 = new Float64Array(n), k2 = new Float64Array(n), k3 = new Float64Array(n), k4 = new Float64Array(n);
+    const tmp = new Float64Array(n);
+    for (let s = 0; s < this.substeps; s++) {
+      const y = this.state;
+      this._rhs(y, Fx, Fz, k1);
+      for (let i = 0; i < n; i++) tmp[i] = y[i] + 0.5 * h * k1[i];
+      this._rhs(tmp, Fx, Fz, k2);
+      for (let i = 0; i < n; i++) tmp[i] = y[i] + 0.5 * h * k2[i];
+      this._rhs(tmp, Fx, Fz, k3);
+      for (let i = 0; i < n; i++) tmp[i] = y[i] + h * k3[i];
+      this._rhs(tmp, Fx, Fz, k4);
+      for (let i = 0; i < n; i++) y[i] += (h / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
+      this.t += h;
+    }
+  }
+
+  splitForRender() {
+    const nL = this.nL, nV = this.nV;
+    return {
+      xShift: this.state[0], zShift: this.state[2],
+      aLat: this.state.subarray(4, 4 + nL),
+      aVert: this.state.subarray(4 + 2 * nL, 4 + 2 * nL + nV),
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Colour helpers
+// ---------------------------------------------------------------------------
+const WATER_STOPS = [
+  [0.00, 0x0B3D91], [0.35, 0x1565C0], [0.55, 0x1E88E5],
+  [0.72, 0x42A5F5], [0.86, 0x90CAF9], [1.00, 0xBBDEFB],
+];
+function waterColor(t) {
+  t = Math.min(1, Math.max(0, t));
+  for (let i = 0; i < WATER_STOPS.length - 1; i++) {
+    const [t0, c0] = WATER_STOPS[i], [t1, c1] = WATER_STOPS[i + 1];
+    if (t <= t1) {
+      const f = (t - t0) / (t1 - t0 || 1);
+      const r = (((c0 >> 16) & 255) * (1 - f) + ((c1 >> 16) & 255) * f) / 255;
+      const g = (((c0 >> 8) & 255) * (1 - f) + ((c1 >> 8) & 255) * f) / 255;
+      const b = ((c0 & 255) * (1 - f) + (c1 & 255) * f) / 255;
+      return [r, g, b];
+    }
+  }
+  return [0.73, 0.85, 0.98];
+}
+
+// ---------------------------------------------------------------------------
+// Scene setup
+// ---------------------------------------------------------------------------
+const sceneEl = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(sceneEl.clientWidth, sceneEl.clientHeight);
+sceneEl.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x05060a);
+
+// Starfield: a spray of points on a large sphere around the scene.
+(function addStars() {
+  const N = 900, pos = new Float32Array(N * 3);
+  for (let i = 0; i < N; i++) {
+    const u = Math.random() * 2 - 1, th = Math.random() * Math.PI * 2;
+    const rr = Math.sqrt(1 - u * u), R2 = 60 + Math.random() * 40;
+    pos[i * 3] = R2 * rr * Math.cos(th);
+    pos[i * 3 + 1] = R2 * rr * Math.sin(th);
+    pos[i * 3 + 2] = R2 * u;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const stars = new THREE.Points(g, new THREE.PointsMaterial({
+    color: 0xffffff, size: 0.35, sizeAttenuation: true,
+    transparent: true, opacity: 0.85, depthWrite: false,
+  }));
+  scene.add(stars);
+})();
+
+const camera = new THREE.PerspectiveCamera(42, sceneEl.clientWidth / sceneEl.clientHeight, 0.1, 200);
+camera.up.set(0, 0, 1);
+camera.position.set(7.5, -10.5, 5.5);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 4;
+controls.maxDistance = 40;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+const key = new THREE.DirectionalLight(0xffffff, 0.8);
+key.position.set(6, -8, 12); scene.add(key);
+const fill = new THREE.DirectionalLight(0x88aaff, 0.35);
+fill.position.set(-8, 6, 4); scene.add(fill);
+
+// Everything that translates with the rigid body lives in this group.
+const craft = new THREE.Group();
+scene.add(craft);
+
+let DATA = null, R = 1;
+let fluidMesh = null, fluidPos = null, fluidColor = null;
+let rimLine = null;
+let nR = 0, nPhi = 0;
+let X0 = null, Y0 = null, angLat = null, angVert = null;
+let curPreset = null, curZ0 = null;
+let gain = 4.0;
+
+function boxMesh(cx, cy, cz, sx, sy, sz, color, opacity, edge, opts = {}) {
+  const geo = new THREE.BoxGeometry(sx, sy, sz);
+  const transparent = opacity < 1;
+  const mat = new THREE.MeshStandardMaterial({
+    color, transparent, opacity, roughness: 0.55, metalness: 0.15,
+    side: opts.side || THREE.FrontSide,
+    // Transparent craft parts must NOT write depth, otherwise their near
+    // faces silently occlude the water surface behind them.
+    depthWrite: !transparent,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(cx, cy, cz);
+  if (transparent) mesh.renderOrder = 3;
+  if (edge) {
+    const eg = new THREE.LineSegments(new THREE.EdgesGeometry(geo),
+      new THREE.LineBasicMaterial({ color: edge, transparent: true, opacity: opts.edgeOpacity ?? 0.55 }));
+    eg.renderOrder = 4;
+    mesh.add(eg);
+  }
+  return mesh;
+}
+
+function buildCraft(preset) {
+  // Clear previous static meshes (keep fluid group children rebuilt separately).
+  for (let i = craft.children.length - 1; i >= 0; i--) {
+    const c = craft.children[i];
+    if (c.userData.keepFluid) continue;
+    craft.remove(c);
+    c.geometry?.dispose();
+    c.material?.dispose?.();
+  }
+
+  const zTop = preset.z_top_tank;
+  const zCom = zTop + 0.34 * R;
+  const zPanel = zTop + 0.60 * R;
+  const busHalf = 1.30 * R;
+  const busZ0 = -0.18 * R, busZ1 = zPanel + 0.32 * R;
+  const boomSpan = 0.48 * R, panelHalf = 1.22 * R;
+  const panelChord = 2.10 * R, panelThick = 0.045 * R;
+
+  // Bus: glassy cage. Render only the FAR walls (BackSide) so the near wall
+  // never hides the tank, and draw crisp edges so the structure still reads.
+  craft.add(boxMesh(0, 0, 0.5 * (busZ0 + busZ1), 2 * busHalf, 2 * busHalf, busZ1 - busZ0,
+    0xDCE4EE, 0.07, 0xAEC0D8, { side: THREE.BackSide, edgeOpacity: 0.7 }));
+
+  // Solar panels + booms (opaque, off to the sides so they don't occlude).
+  for (const sign of [1, -1]) {
+    const yPanel = sign * (busHalf + boomSpan + panelHalf);
+    craft.add(boxMesh(0, yPanel, zPanel, panelChord, 2 * panelHalf, panelThick, 0x1B3A8C, 1.0, 0x6E86C8));
+    const yBoom = sign * (busHalf + 0.5 * boomSpan);
+    craft.add(boxMesh(0, yBoom, zPanel, 0.18 * R, boomSpan, 0.08 * R, 0x9aa7bd, 1.0, null));
+  }
+
+  // Tank wall (open translucent cylinder, axis along z). No depth write and a
+  // late render order so the water inside is always visible through it.
+  const wallGeo = new THREE.CylinderGeometry(R, R, zTop, 64, 1, true);
+  wallGeo.rotateX(Math.PI / 2);
+  wallGeo.translate(0, 0, zTop / 2);
+  const wallMesh = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({
+    color: 0xEAF1F8, transparent: true, opacity: 0.08, side: THREE.DoubleSide,
+    roughness: 0.2, metalness: 0.1, depthWrite: false,
+  }));
+  wallMesh.renderOrder = 3;
+  craft.add(wallMesh);
+
+  // Tank bottom disk.
+  const botGeo = new THREE.CircleGeometry(R, 64);
+  const botMesh = new THREE.Mesh(botGeo, new THREE.MeshStandardMaterial({
+    color: 0x0D47A1, transparent: true, opacity: 0.28, side: THREE.DoubleSide,
+    depthWrite: false,
+  }));
+  botMesh.renderOrder = 2;
+  craft.add(botMesh);
+
+  // CoM marker.
+  const com = new THREE.Mesh(new THREE.SphereGeometry(0.14 * R, 20, 16),
+    new THREE.MeshStandardMaterial({ color: 0xf2f4f7, roughness: 0.4 }));
+  com.position.set(0, 0, zCom); craft.add(com);
+}
+
+function buildFluid() {
+  // Topology is constant across presets; build once.
+  const geo = new THREE.BufferGeometry();
+  const nv = nR * nPhi;
+  fluidPos = new Float32Array(nv * 3);
+  fluidColor = new Float32Array(nv * 3);
+  const indices = [];
+  for (let i = 0; i < nR - 1; i++) {
+    for (let j = 0; j < nPhi - 1; j++) {
+      const a = i * nPhi + j, b = (i + 1) * nPhi + j, c = i * nPhi + (j + 1), d = (i + 1) * nPhi + (j + 1);
+      indices.push(a, b, c, c, b, d);
+    }
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(fluidPos, 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(fluidColor, 3));
+  geo.setIndex(indices);
+  const mat = new THREE.MeshStandardMaterial({
+    vertexColors: true, side: THREE.DoubleSide, roughness: 0.25, metalness: 0.05,
+  });
+  fluidMesh = new THREE.Mesh(geo, mat);
+  fluidMesh.userData.keepFluid = true;
+  fluidMesh.renderOrder = 1;
+  craft.add(fluidMesh);
+
+  // Waterline rim (outer ring).
+  const rimGeo = new THREE.BufferGeometry();
+  rimGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nPhi * 3), 3));
+  rimLine = new THREE.Line(rimGeo, new THREE.LineBasicMaterial({ color: 0x0D47A1 }));
+  rimLine.userData.keepFluid = true;
+  craft.add(rimLine);
+}
+
+function updateFluid(render) {
+  const { aLat, aVert } = render;
+  const nLat = sim.nL, nVert = sim.nV;
+  const shapeL = sim.lateral.shapeR, shapeV = sim.vertical.shapeR;
+  let zmin = Infinity, zmax = -Infinity;
+  const zRow = new Float64Array(nR);
+  const latDisp = new Float64Array(nR), vertDisp = new Float64Array(nR);
+  for (let i = 0; i < nR; i++) {
+    let sl = 0, sv = 0;
+    for (let p = 0; p < nLat; p++) sl += shapeL[i * nLat + p] * aLat[p];
+    for (let p = 0; p < nVert; p++) sv += shapeV[i * nVert + p] * aVert[p];
+    latDisp[i] = sl; vertDisp[i] = sv;
+  }
+  for (let i = 0; i < nR; i++) {
+    for (let j = 0; j < nPhi; j++) {
+      const idx = i * nPhi + j;
+      const z = curZ0[idx] + gain * (latDisp[i] * angLat[j] + vertDisp[i] * angVert[j]);
+      fluidPos[idx * 3 + 0] = X0[idx];
+      fluidPos[idx * 3 + 1] = Y0[idx];
+      fluidPos[idx * 3 + 2] = z;
+      if (z < zmin) zmin = z;
+      if (z > zmax) zmax = z;
+    }
+  }
+  const span = (zmax - zmin) || 1;
+  for (let idx = 0; idx < nR * nPhi; idx++) {
+    const [r, g, b] = waterColor((fluidPos[idx * 3 + 2] - zmin) / span);
+    fluidColor[idx * 3 + 0] = r; fluidColor[idx * 3 + 1] = g; fluidColor[idx * 3 + 2] = b;
+  }
+  fluidMesh.geometry.attributes.position.needsUpdate = true;
+  fluidMesh.geometry.attributes.color.needsUpdate = true;
+  fluidMesh.geometry.computeVertexNormals();
+
+  // Rim uses the outer radial ring (i = nR-1).
+  const rimAttr = rimLine.geometry.attributes.position.array;
+  const iOuter = nR - 1;
+  for (let j = 0; j < nPhi; j++) {
+    const idx = iOuter * nPhi + j;
+    rimAttr[j * 3 + 0] = fluidPos[idx * 3 + 0];
+    rimAttr[j * 3 + 1] = fluidPos[idx * 3 + 1];
+    rimAttr[j * 3 + 2] = fluidPos[idx * 3 + 2];
+  }
+  rimLine.geometry.attributes.position.needsUpdate = true;
+}
+
+// ---------------------------------------------------------------------------
+// State + UI
+// ---------------------------------------------------------------------------
+const sim = new Simulator({ lateral_force_amp: 5, vertical_force_amp: 5, modal_zeta: 0.015, substeps: 4 });
+let gi = 0, pi = 0, fi = 1;   // gravity / propellant / fill indices
+let timeSpeed = 2.0, paused = false;
+const held = { left: false, right: false, up: false, down: false };
+let lastWall = performance.now() / 1000;
+
+function presetKey(g, p, f) { return `g${g}_p${p}_f${f}`; }
+function available(g, p, f) { return DATA.presets[presetKey(g, p, f)] !== undefined; }
+
+// Nearest fill index (to `preferred`) that exists for gravity g + propellant p.
+// Returns -1 if this gravity/propellant pair has no available fill at all.
+function pickFill(g, p, preferred) {
+  if (available(g, p, preferred)) return preferred;
+  for (let d = 1; d < DATA.fill.length; d++) {
+    if (available(g, p, preferred - d)) return preferred - d;
+    if (available(g, p, preferred + d)) return preferred + d;
+  }
+  return -1;
+}
+
+function syncFill() {
+  const fillSlider = document.getElementById('fill');
+  if (fillSlider) fillSlider.value = fi;
+  const fillVal = document.getElementById('fill-val');
+  if (fillVal) fillVal.textContent = DATA.fill[fi].toFixed(2);
+}
+
+function loadPreset(resetState = true) {
+  const key = presetKey(gi, pi, fi);
+  const preset = DATA.presets[key];
+  if (!preset) { flash('This combination is outside the stable model range.'); return false; }
+  curPreset = preset;
+  curZ0 = Float64Array.from(preset.Z0);
+  sim.setPreset(preset);
+  if (!fluidMesh) buildFluid();
+  buildCraft(preset);
+  if (resetState) sim.reset();
+  refreshButtons();
+  return true;
+}
+
+function flash(msg) {
+  const el = document.getElementById('status');
+  el.textContent = msg; el.style.display = 'block';
+  clearTimeout(flash._t);
+  flash._t = setTimeout(() => { el.style.display = 'none'; }, 1600);
+}
+
+function refreshButtons() {
+  document.querySelectorAll('#gravity-btns button').forEach((b, i) => {
+    b.classList.toggle('on', i === gi);
+    b.disabled = !available(i, pi, fi);
+  });
+  document.querySelectorAll('#propellant-btns button').forEach((b) => {
+    const i = parseInt(b.dataset.pi, 10);
+    b.classList.toggle('on', i === pi);
+    b.disabled = !available(gi, i, fi);
+  });
+  const fillVal = document.getElementById('fill-val');
+  if (fillVal) fillVal.textContent = DATA.fill[fi].toFixed(2);
+}
+
+function buildUI() {
+  const gWrap = document.getElementById('gravity-btns');
+  DATA.gravity.forEach((g, i) => {
+    const b = document.createElement('button');
+    b.className = 'preset';
+    b.innerHTML = `${g.name}<small>Bo=${g.bo.toFixed(g.bo < 1 ? 2 : 0)}</small>`;
+    b.onclick = () => {
+      const oldG = gi, oldF = fi;
+      const nf = pickFill(i, pi, fi);
+      if (nf < 0) { flash('No stable fill for this combination.'); return; }
+      gi = i; fi = nf; syncFill();
+      if (!loadPreset()) { gi = oldG; fi = oldF; syncFill(); }
+    };
+    gWrap.appendChild(b);
+  });
+  const pWrap = document.getElementById('propellant-btns');
+  DATA.propellant.forEach((p, i) => {
+    if (/^NTO$/i.test(p.name)) return;   // NTO preset is buggy — hide it
+    const b = document.createElement('button');
+    b.className = 'preset';
+    b.dataset.pi = i;
+    b.innerHTML = `${p.name}<small>${p.angle.toFixed(0)}°</small>`;
+    b.onclick = () => {
+      const oldP = pi, oldF = fi;
+      const nf = pickFill(gi, i, fi);
+      if (nf < 0) { flash('No stable fill for this combination.'); return; }
+      pi = i; fi = nf; syncFill();
+      if (!loadPreset()) { pi = oldP; fi = oldF; syncFill(); }
+    };
+    pWrap.appendChild(b);
+  });
+
+  const fillSlider = document.getElementById('fill');
+  if (fillSlider) {
+    fillSlider.min = 0; fillSlider.max = DATA.fill.length - 1; fillSlider.step = 1; fillSlider.value = fi;
+    fillSlider.oninput = () => {
+      const old = fi; fi = parseInt(fillSlider.value, 10);
+      const fv = document.getElementById('fill-val');
+      if (fv) fv.textContent = DATA.fill[fi].toFixed(2);
+      if (!loadPreset()) { fi = old; fillSlider.value = fi; }
+    };
+  }
+
+  const zetaSlider = document.getElementById('zeta');
+  if (zetaSlider) {
+    zetaSlider.value = sim.zeta;
+    document.getElementById('zeta-val').textContent = sim.zeta.toFixed(3);
+    zetaSlider.oninput = () => {
+      const z = parseFloat(zetaSlider.value);
+      document.getElementById('zeta-val').textContent = z.toFixed(3);
+      sim.setZeta(z);
+    };
+  }
+
+  const speedSlider = document.getElementById('speed');
+  speedSlider.value = timeSpeed;
+  document.getElementById('speed-val').textContent = timeSpeed.toFixed(1) + '×';
+  speedSlider.oninput = () => {
+    timeSpeed = parseFloat(speedSlider.value);
+    document.getElementById('speed-val').textContent = timeSpeed.toFixed(1) + '×';
+  };
+
+  document.getElementById('btn-reset').onclick = () => { sim.reset(); lastWall = performance.now() / 1000; };
+  const pauseBtn = document.getElementById('btn-pause');
+  pauseBtn.onclick = () => { paused = !paused; pauseBtn.textContent = paused ? 'Play' : 'Pause'; lastWall = performance.now() / 1000; };
+
+  // Thruster pads (pointer = mouse + touch).
+  document.querySelectorAll('.pad button[data-force]').forEach((b) => {
+    const dir = b.dataset.force;
+    const on = (e) => { e.preventDefault(); held[dir] = true; b.classList.add('press'); };
+    const off = (e) => { e.preventDefault(); held[dir] = false; b.classList.remove('press'); };
+    b.addEventListener('pointerdown', on);
+    b.addEventListener('pointerup', off);
+    b.addEventListener('pointerleave', off);
+    b.addEventListener('pointercancel', off);
+  });
+  // Keyboard for desktop.
+  const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
+  window.addEventListener('keydown', (e) => {
+    if (map[e.key]) { held[map[e.key]] = true; e.preventDefault(); }
+    else if (e.key === 'r') { sim.reset(); }
+    else if (e.key === 'p') { paused = !paused; pauseBtn.textContent = paused ? 'Play' : 'Pause'; }
+  });
+  window.addEventListener('keyup', (e) => { if (map[e.key]) { held[map[e.key]] = false; e.preventDefault(); } });
+}
+
+function currentForce() {
+  let fx = 0, fz = 0;
+  if (held.right) fx += sim.forceAmp;
+  if (held.left) fx -= sim.forceAmp;
+  if (held.up) fz += sim.zForceAmp;
+  if (held.down) fz -= sim.zForceAmp;
+  return [fx, fz];
+}
+
+const hud = document.getElementById('hud');
+function updateHUD(render, fx, fz) {
+  hud.innerHTML =
+    `t = <b>${sim.t.toFixed(2)} s</b><br>` +
+    `x/R = <b>${(render.xShift / R).toFixed(2)}</b>&nbsp; z/R = <b>${(render.zShift / R).toFixed(2)}</b><br>` +
+    `Fx = <b>${fx.toFixed(0)} N</b>&nbsp; Fz = <b>${fz.toFixed(0)} N</b>` +
+    (paused ? '<br><b style="color:#ec7a2c">PAUSED</b>' : '');
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const now = performance.now() / 1000;
+  let wallDt = Math.min(Math.max(now - lastWall, 1e-3), 0.12);
+  lastWall = now;
+  const [fx, fz] = currentForce();
+  if (!paused) sim.advance(wallDt * timeSpeed, fx, fz);
+  else { sim.activeFx = 0; sim.activeFz = 0; }
+
+  const render = sim.splitForRender();
+  updateFluid(render);
+  craft.position.set(render.xShift, 0, render.zShift);
+  updateHUD(render, paused ? 0 : fx, paused ? 0 : fz);
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  const w = sceneEl.clientWidth, h = sceneEl.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+
+// ---------------------------------------------------------------------------
+// Background Earth — a wireframe globe that spins as you scroll (pantheon-style)
+// ---------------------------------------------------------------------------
+(function initEarth() {
+  const host = document.getElementById('earth-bg');
+  const r2 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  r2.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  r2.setSize(window.innerWidth, window.innerHeight);
+  host.appendChild(r2.domElement);
+
+  const s2 = new THREE.Scene();
+  const c2 = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
+  c2.position.set(0, 0, 8);
+
+  const globe = new THREE.Group();
+  globe.rotation.x = -0.35;   // tilt the pole toward the viewer
+  globe.rotation.z = 0.18;
+  s2.add(globe);
+
+  const spin = new THREE.Group();  // the part that rotates about the polar axis
+  globe.add(spin);
+
+  const RAD = 2.6;
+  // Solid sphere in the background colour: occludes the far hemisphere so the
+  // graticule reads as a real globe instead of a transparent cage.
+  const solid = new THREE.Mesh(
+    new THREE.SphereGeometry(RAD * 0.985, 48, 32),
+    new THREE.MeshBasicMaterial({ color: 0x232e6b })
+  );
+  spin.add(solid);
+  // Latitude/longitude wireframe.
+  const wire = new THREE.LineSegments(
+    new THREE.WireframeGeometry(new THREE.SphereGeometry(RAD, 36, 24)),
+    new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.24 })
+  );
+  spin.add(wire);
+  // Bright silhouette ring for a clean engraving-style edge.
+  const rimPts = [];
+  for (let i = 0; i <= 128; i++) {
+    const a = (i / 128) * Math.PI * 2;
+    rimPts.push(new THREE.Vector3(Math.cos(a) * RAD, Math.sin(a) * RAD, 0));
+  }
+  const rim = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(rimPts),
+    new THREE.LineBasicMaterial({ color: 0xf0ecde, transparent: true, opacity: 0.5 })
+  );
+  globe.add(rim);  // billboard-ish edge, not spun
+
+  // Small satellites that orbit the globe. Each is a boxy bus with two solar
+  // wings, carried on its own tilted orbit ring so the paths cross the sphere.
+  function makeSatellite() {
+    const sat = new THREE.Group();
+    const beige = new THREE.MeshBasicMaterial({ color: 0xf0ecde });
+    const green = new THREE.MeshBasicMaterial({ color: 0xec7a2c });
+    const bus = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.22), beige);
+    sat.add(bus);
+    const panelGeo = new THREE.BoxGeometry(0.44, 0.02, 0.14);
+    const pL = new THREE.Mesh(panelGeo, green); pL.position.x = -0.32; sat.add(pL);
+    const pR = new THREE.Mesh(panelGeo, green); pR.position.x = 0.32; sat.add(pR);
+    return sat;
+  }
+  const satellites = [];
+  const ORBITS = [
+    { r: RAD + 0.7, tilt: 0.5, tiltZ: 0.2, speed: 0.35, phase: 0.0 },
+    { r: RAD + 1.2, tilt: -0.7, tiltZ: 0.6, speed: 0.24, phase: 2.1 },
+    { r: RAD + 1.9, tilt: 1.1, tiltZ: -0.4, speed: 0.17, phase: 4.0 },
+  ];
+  ORBITS.forEach((o) => {
+    const ring = new THREE.Group();
+    ring.rotation.x = o.tilt; ring.rotation.z = o.tiltZ;
+    globe.add(ring);
+    // Faint orbit path.
+    const pts = [];
+    for (let i = 0; i <= 96; i++) {
+      const a = (i / 96) * Math.PI * 2;
+      pts.push(new THREE.Vector3(Math.cos(a) * o.r, Math.sin(a) * o.r, 0));
+    }
+    ring.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.18 })
+    ));
+    const sat = makeSatellite();
+    ring.add(sat);
+    satellites.push({ sat, ...o });
+  });
+
+  function layout() {
+    const wide = window.innerWidth > 760;
+    globe.position.set(wide ? 2.3 : 0, wide ? 0 : 0.6, 0);
+    const s = wide ? 1 : 0.82;
+    globe.scale.setScalar(s);
+  }
+  layout();
+
+  let curSpin = 0;
+  function tickEarth() {
+    requestAnimationFrame(tickEarth);
+    const sy = window.scrollY || window.pageYOffset || 0;
+    const targetSpin = sy * 0.0016;                 // scroll drives rotation
+    curSpin += (targetSpin - curSpin) * 0.08;        // smooth follow
+    spin.rotation.y = curSpin + performance.now() * 0.00003;  // gentle idle drift
+    // Satellites orbit as you scroll (with a slow idle drift too).
+    const orbit = sy * 0.004 + performance.now() * 0.00012;
+    satellites.forEach((o) => {
+      const a = orbit * o.speed * 6 + o.phase;
+      o.sat.position.set(Math.cos(a) * o.r, Math.sin(a) * o.r, 0);
+      o.sat.rotation.z = a + Math.PI / 2;            // keep panels along the path
+    });
+    host.style.opacity = sy > window.innerHeight * 0.35 ? '1' : '0';
+    const gridEl = document.getElementById('grid-bg');
+    if (gridEl) gridEl.style.opacity = sy > window.innerHeight * 0.35 ? '1' : '0';
+    r2.render(s2, c2);
+  }
+  tickEarth();
+
+  window.addEventListener('resize', () => {
+    c2.aspect = window.innerWidth / window.innerHeight;
+    c2.updateProjectionMatrix();
+    r2.setSize(window.innerWidth, window.innerHeight);
+    layout();
+  });
+})();
+
+// ---------------------------------------------------------------------------
+// Boot
+// ---------------------------------------------------------------------------
+fetch('data/models.json')
+  .then((r) => { if (!r.ok) throw new Error('models.json not found'); return r.json(); })
+  .then((data) => {
+    DATA = data;
+    R = data.R_tank;
+    gain = data.config.surface_visual_gain;
+    timeSpeed = data.config.time_speed;
+    sim.forceAmp = data.config.lateral_force_amp;
+    sim.zForceAmp = data.config.vertical_force_amp;
+    sim.substeps = data.config.substeps | 0;
+    sim.zeta = data.config.modal_zeta;
+    nR = data.shared.n_r; nPhi = data.shared.n_phi;
+    X0 = Float64Array.from(data.shared.X0);
+    Y0 = Float64Array.from(data.shared.Y0);
+    angLat = Float64Array.from(data.shared.angular_lat);
+    angVert = Float64Array.from(data.shared.angular_vert);
+    // Pick a default preset that exists (prefer Micro-g so slosh is visible).
+    fi = Math.min(1, data.fill.length - 1);
+    gi = data.gravity.findIndex((_, i) => available(i, 0, fi));
+    if (gi < 0) gi = 0;
+    // Prefer the Micro-g preset if available for a striking default.
+    const microIdx = data.gravity.findIndex((g) => /micro/i.test(g.name));
+    if (microIdx >= 0) { const g = microIdx, nf = pickFill(g, 0, fi); if (nf >= 0) { gi = g; fi = nf; } }
+    buildUI();
+    loadPreset();
+    lastWall = performance.now() / 1000;
+    animate();
+  })
+  .catch((err) => {
+    const el = document.getElementById('status');
+    el.style.display = 'block';
+    el.textContent = 'Could not load model data: ' + err.message +
+      '  — run  MPLBACKEND=Agg python web/export_web_data.py  and serve this folder over http.';
+  });
+</script>
+
+<script>
+// LinkedIn post carousel: prev/next arrows + dots, one embed shown at a time.
+(function initCarousel() {
+  const track = document.getElementById('li-track');
+  if (!track) return;
+  const slides = track.children.length;
+  const dotsWrap = document.getElementById('li-dots');
+  let idx = 0;
+  function go(i) {
+    idx = (i + slides) % slides;
+    track.style.transform = 'translateX(' + (-idx * 100) + '%)';
+    [...dotsWrap.children].forEach((d, k) => d.classList.toggle('on', k === idx));
+  }
+  for (let i = 0; i < slides; i++) {
+    const b = document.createElement('button');
+    b.setAttribute('aria-label', 'Go to post ' + (i + 1));
+    b.addEventListener('click', () => go(i));
+    dotsWrap.appendChild(b);
+  }
+  document.getElementById('li-prev').addEventListener('click', () => go(idx - 1));
+  document.getElementById('li-next').addEventListener('click', () => go(idx + 1));
+  go(0);
+})();
+</script>
+</body>
+</html>
