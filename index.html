@@ -208,8 +208,7 @@
 
   /* LinkedIn post cards. LinkedIn's /embed/ iframes are blocked inside most
      mobile browsers, so we link out to the posts with reliable cards instead. */
-  .li-posts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px auto 4px; max-width: 720px; }
-  @media (max-width: 680px) { .li-posts { grid-template-columns: 1fr; } }
+  .li-posts { display: grid; grid-template-columns: 1fr; gap: 16px; margin: 20px auto 4px; max-width: 460px; }
   a.li-post {
     display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: var(--text);
     background: var(--panel); border: 1px solid var(--panel-border); border-radius: 4px;
@@ -414,11 +413,6 @@
     <div class="li-posts">
       <a class="li-post" href="https://www.linkedin.com/feed/update/urn:li:activity:7468333717594333184/" target="_blank" rel="noopener">
         <span class="li-tag"><b>in</b> Featured update</span>
-        <span class="li-title">Curvature-corrected sloshing spectra &mdash; live microgravity demo</span>
-        <span class="li-open">View on LinkedIn &nearr;</span>
-      </a>
-      <a class="li-post" href="https://www.linkedin.com/feed/update/urn:li:activity:7442295738686115840/" target="_blank" rel="noopener">
-        <span class="li-tag"><b>in</b> Research update</span>
         <span class="li-title">Coupled fluid&ndash;multibody ullage impact loads on spacecraft</span>
         <span class="li-open">View on LinkedIn &nearr;</span>
       </a>
