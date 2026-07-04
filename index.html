@@ -588,7 +588,7 @@
       <div class="stage">
         <canvas id="lenia-glider"></canvas>
         <div class="lenia-ui">
-          <button id="lenia-attract" class="on">Attract</button>
+          <button id="lenia-attract">Attract</button>
           <button id="lenia-repel">Repel</button>
           <button id="lenia-feed">Feed</button>
           <button id="lenia-reset">Reset</button>
@@ -1568,13 +1568,12 @@ fetch('data/models.json')
 
 <script>
 // ---------------------------------------------------------------------------
-// Live multi-kernel Lenia organism — a continuous-space cellular automaton.
-// A_{t+1} = clip(A + (1/T) * sum_k w_k G_k(K_k * A) / sum w_k, 0, 1), with
-// exponential shell kernels and Gaussian growth mappings. Two kernels (an
-// Orbium-scale ring plus a small two-shell ring, weights 1.0/0.2 — verified
-// stable offline) give richer internal dynamics than a single ring.
-// The pointer adds a nutrient field G += gain*M*(1-A): the organism drifts
-// toward your cursor. Click/tap injects a food blob it has to digest.
+// Live Lenia Orbium — a continuous-space cellular automaton.
+// A_{t+1} = clip(A + (1/T) * G(K*A), 0, 1), with the canonical single-ring
+// Orbium kernel. The previous two-kernel variant was more expressive, but it
+// could destabilize into growth/decay on some browsers and device frame rates.
+// Interaction is opt-in: Attract/Repel/Feed only affect the field after the
+// user chooses a mode, so the organism can drift stably by default.
 // Runs only while the section is visible; auto-reseeds if it dies/blows up.
 // ---------------------------------------------------------------------------
 (function initLeniaGlider() {
@@ -1644,10 +1643,11 @@ fetch('data/models.json')
     return { KN, kdx, kdy, kw };
   }
 
-  // Two growth kernels: the canonical Orbium ring + a small two-shell ring.
+  // Stable canonical Orbium rule: one normalized shell kernel.
+  // Keeping this single-kernel avoids the runaway/decay seen in the
+  // experimental two-kernel version.
   const KERNELS = [
-    { k: buildKernel(13, [1.0]),      mu: 0.15, sig: 0.017, w: 1.0 },
-    { k: buildKernel(6,  [1.0, 0.4]), mu: 0.22, sig: 0.03,  w: 0.2 },
+    { k: buildKernel(13, [1.0]), mu: 0.15, sig: 0.015, w: 1.0 },
   ];
   const WSUM = KERNELS.reduce((s, K) => s + K.w, 0);
   const RMAX = 13;
@@ -1677,8 +1677,8 @@ fetch('data/models.json')
   // Pointer nutrient field, as in the interactive MAP-Elites playground:
   // growth gets +gain*M*(1-A) (attract) or -gain*M*A (repel) around the
   // cursor. Feed mode drops a matter blob on click/tap instead.
-  const ATTRACT_GAIN = 0.8, REPEL_GAIN = 0.45, M_SIG = 10;
-  let mode = 'attract';          // 'attract' | 'repel' | 'feed' | null
+  const ATTRACT_GAIN = 0.22, REPEL_GAIN = 0.20, M_SIG = 8;
+  let mode = null;               // 'attract' | 'repel' | 'feed' | null
   let pOver = false, pmy = 0, pmx = 0;
 
   function step() {
@@ -1727,9 +1727,11 @@ fetch('data/models.json')
   // Pointer handling: map canvas CSS pixels to grid cells.
   function toGrid(e) {
     const r = cvs.getBoundingClientRect();
+    const gy = Math.floor((e.clientY - r.top) / r.height * GH);
+    const gx = Math.floor((e.clientX - r.left) / r.width * GW);
     return [
-      Math.round((e.clientY - r.top) / r.height * GH),
-      Math.round((e.clientX - r.left) / r.width * GW),
+      Math.max(0, Math.min(GH - 1, gy)),
+      Math.max(0, Math.min(GW - 1, gx)),
     ];
   }
   cvs.addEventListener('pointermove', (e) => {
@@ -1754,7 +1756,8 @@ fetch('data/models.json')
     });
     return b;
   });
-  cvs.style.cursor = 'crosshair';
+  modeBtns.forEach(bb => bb && bb.classList.remove('on'));
+  cvs.style.cursor = 'default';
   const resetBtn = document.getElementById('lenia-reset');
   if (resetBtn) resetBtn.addEventListener('click', () => { seed(); steps = 0; snapValid = false; });
   cvs.style.touchAction = 'pan-y';   // taps feed it, page can still scroll
