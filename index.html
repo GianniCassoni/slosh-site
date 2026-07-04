@@ -355,7 +355,7 @@
   <div id="craft-select">
     <div class="head">Spacecraft</div>
     <button class="preset on" id="craft-sat">Satellite<small>bus + wings</small></button>
-    <button class="preset" id="craft-hm">Hail Mary<small>cylindrical hull</small></button>
+    <button class="preset" id="craft-hm">Hail Mary<small>3 tanks + point mass</small></button>
   </div>
 
   <div id="controls">
@@ -1215,6 +1215,10 @@ function refreshButtons() {
   document.querySelectorAll('#gravity-btns button').forEach((b, i) => {
     b.classList.toggle('on', i === gi);
     b.disabled = !available(i, pi, fi);
+    const g = DATA.gravity[i];
+    const p = DATA.presets[presetKey(i, pi, fi)];
+    const bo = p ? p.bo : g.bo;
+    b.innerHTML = `${g.name}<small>Bo=${bo.toFixed(bo < 1 ? 2 : 0)}</small>`;
   });
   document.querySelectorAll('#propellant-btns button').forEach((b) => {
     const i = parseInt(b.dataset.pi, 10);
