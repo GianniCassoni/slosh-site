@@ -76,7 +76,21 @@
     border: 1px solid var(--panel-border); border-radius: 4px;
     background: var(--panel); overflow: hidden; backdrop-filter: blur(2px);
   }
+  .lenia-box .stage { position: relative; }
   .lenia-box canvas { display: block; width: 100%; height: 200px; image-rendering: auto; }
+  /* Pointer-mode toggles overlaid on the Lenia canvas — same transparent
+     rounded style as the control-panel preset buttons, with an on state. */
+  .lenia-ui {
+    position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; z-index: 2;
+  }
+  .lenia-ui button {
+    padding: 6px 12px; border-radius: 9px; cursor: pointer;
+    border: 1px solid var(--panel-border); background: rgba(27,36,80,.45);
+    color: var(--text); font-size: 11px; line-height: 1.15;
+    backdrop-filter: blur(2px); transition: all .12s;
+  }
+  .lenia-ui button:hover { border-color: var(--accent); }
+  .lenia-ui button.on { background: var(--accent); border-color: var(--accent); color: #1b2450; }
   .lenia-box .cap {
     font-size: 13.5px; color: var(--muted); line-height: 1.6;
     padding: 14px 18px 16px; border-top: 1px solid var(--panel-border);
@@ -138,7 +152,7 @@
 
   /* Thruster D-pad + action buttons */
   #controls {
-    position: absolute; z-index: 6; bottom: 258px; width: 100%;
+    position: absolute; z-index: 6; bottom: 224px; width: 100%;
     display: flex; justify-content: space-between; align-items: flex-end;
     padding: 0 16px; pointer-events: none;
   }
@@ -159,12 +173,12 @@
     #title h1 { font-size: 16px; }
     #title p { display: none; }
     #hud { top: 70px; font-size: 11px; }
-    #controls { bottom: 318px; padding: 0 12px; }
+    #controls { bottom: 284px; padding: 0 12px; }
   }
   @media (max-width: 480px) {
     .pad { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); }
     .actions button { width: 46px; height: 46px; }
-    #controls { bottom: 330px; }
+    #controls { bottom: 296px; }
   }
 
   /* Scroll cue at the bottom of the demo */
@@ -357,10 +371,6 @@
     <div class="row">
       <div class="lab">Fill h/R</div>
       <div class="slider"><input id="fill" type="range" min="0" max="3" step="1" value="1" /><span class="val" id="fill-val">–</span></div>
-    </div>
-    <div class="row">
-      <div class="lab">Damping ζ</div>
-      <div class="slider"><input id="zeta" type="range" min="0.002" max="0.08" step="0.002" value="0.015" /><span class="val" id="zeta-val">0.015</span></div>
     </div>
     <div class="row">
       <div class="lab">Time ×</div>
@@ -556,10 +566,19 @@
     </p>
 
     <div class="lenia-box">
-      <canvas id="lenia-glider"></canvas>
+      <div class="stage">
+        <canvas id="lenia-glider"></canvas>
+        <div class="lenia-ui">
+          <button id="lenia-attract" class="on">Attract</button>
+          <button id="lenia-repel">Repel</button>
+          <button id="lenia-feed">Feed</button>
+        </div>
+      </div>
       <div class="cap"><b>A live multi-kernel Lenia organism.</b> A continuous-space cellular automaton
         evolved with MAP-Elites: two coupled growth kernels keep a coherent structure alive while it
-        translates. Move your pointer over it to attract the organism; click or tap to drop food.</div>
+        translates. Use the buttons on the canvas to switch pointer mode: <b>Attract</b> pulls the
+        organism toward your cursor, <b>Repel</b> pushes it away, <b>Feed</b> drops food where you
+        click or tap. Click the active mode again to turn interaction off.</div>
     </div>
 
     <div class="grid2">
@@ -1043,7 +1062,7 @@ function updateFluid(render) {
 // ---------------------------------------------------------------------------
 // State + UI
 // ---------------------------------------------------------------------------
-const sim = new Simulator({ lateral_force_amp: 5, vertical_force_amp: 5, modal_zeta: 0.015, substeps: 4 });
+const sim = new Simulator({ lateral_force_amp: 5, vertical_force_amp: 5, modal_zeta: 0.03, substeps: 4 });
 // The dataset is nondimensional (capillary time units). One global conversion
 // makes Earth's first lateral mode match the real dimensional frequency of a
 // 1 m water tank at 1 g — omega_real = sqrt(g*1.841/R) ~ 4.25 rad/s vs the
@@ -1150,17 +1169,6 @@ function buildUI() {
       const fv = document.getElementById('fill-val');
       if (fv) fv.textContent = DATA.fill[fi].toFixed(2);
       if (!loadPreset()) { fi = old; fillSlider.value = fi; }
-    };
-  }
-
-  const zetaSlider = document.getElementById('zeta');
-  if (zetaSlider) {
-    zetaSlider.value = sim.zeta;
-    document.getElementById('zeta-val').textContent = sim.zeta.toFixed(3);
-    zetaSlider.oninput = () => {
-      const z = parseFloat(zetaSlider.value);
-      document.getElementById('zeta-val').textContent = z.toFixed(3);
-      sim.setZeta(z);
     };
   }
 
@@ -1384,7 +1392,7 @@ fetch('data/models.json')
     sim.forceAmp = data.config.lateral_force_amp;
     sim.zForceAmp = data.config.vertical_force_amp;
     sim.substeps = data.config.substeps | 0;
-    sim.zeta = data.config.modal_zeta;
+    sim.setZeta(0.03);   // fixed modal damping ratio
     nR = data.shared.n_r; nPhi = data.shared.n_phi;
     X0 = Float64Array.from(data.shared.X0);
     Y0 = Float64Array.from(data.shared.Y0);
@@ -1543,10 +1551,11 @@ fetch('data/models.json')
   }
   seed();
 
-  // Pointer nutrient field: while the cursor is over the canvas the growth
-  // gets +gain*M*(1-A), a soft attractor (verified to keep the organism
-  // coherent offline for gain<=0.4, sigma~10).
-  const M_GAIN = 0.4, M_SIG = 10;
+  // Pointer nutrient field, as in the interactive MAP-Elites playground:
+  // growth gets +gain*M*(1-A) (attract) or -gain*M*A (repel) around the
+  // cursor. Feed mode drops a matter blob on click/tap instead.
+  const ATTRACT_GAIN = 0.4, REPEL_GAIN = 0.25, M_SIG = 10;
+  let mode = 'attract';          // 'attract' | 'repel' | 'feed' | null
   let pOver = false, pmy = 0, pmx = 0;
 
   function step() {
@@ -1566,9 +1575,11 @@ fetch('data/models.json')
         }
         g /= WSUM;
         const a = A[row + x];
-        if (pOver) {
+        if (pOver && (mode === 'attract' || mode === 'repel')) {
           const dy = y - pmy, dx = x - pmx;
-          g += M_GAIN * Math.exp(-(dy * dy + dx * dx) / s2) * (1 - a);
+          const M = Math.exp(-(dy * dy + dx * dx) / s2);
+          if (mode === 'attract') g += ATTRACT_GAIN * M * (1 - a);
+          else g -= REPEL_GAIN * M * a;
         }
         let v = a + g / T;
         v = v < 0 ? 0 : v > 1 ? 1 : v;
@@ -1599,13 +1610,26 @@ fetch('data/models.json')
     ];
   }
   cvs.addEventListener('pointermove', (e) => {
-    [pmy, pmx] = toGrid(e); pOver = true;
+    [pmy, pmx] = toGrid(e); pOver = mode !== null;
   });
   cvs.addEventListener('pointerleave', () => { pOver = false; });
   cvs.addEventListener('pointerdown', (e) => {
     const [gy, gx] = toGrid(e);
-    dropFood(gy, gx);
-    [pmy, pmx] = [gy, gx]; pOver = true;
+    if (mode === 'feed') dropFood(gy, gx);
+    [pmy, pmx] = [gy, gx]; pOver = mode !== null;
+  });
+
+  // Mode toggle buttons overlaid on the canvas: mutually exclusive,
+  // clicking the active one switches interaction off entirely.
+  const modeBtns = ['attract', 'repel', 'feed'].map(m => {
+    const b = document.getElementById('lenia-' + m);
+    if (b) b.addEventListener('click', () => {
+      mode = (mode === m) ? null : m;
+      if (mode === null) pOver = false;
+      modeBtns.forEach(bb => bb && bb.classList.toggle('on', bb === b && mode !== null));
+      cvs.style.cursor = mode ? 'crosshair' : 'default';
+    });
+    return b;
   });
   cvs.style.cursor = 'crosshair';
   cvs.style.touchAction = 'pan-y';   // taps feed it, page can still scroll
