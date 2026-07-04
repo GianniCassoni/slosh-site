@@ -1069,16 +1069,11 @@ function buildCraftHailMary(preset) {
     new THREE.MeshStandardMaterial({ color: 0xf2f4f7, roughness: 0.35, metalness: 0.3 }));
   pm.position.set(0, 0, zMass); craft.add(pm);
 
-  // Struts: point mass -> each tank top rim, plus triangle edge ties.
+  // Struts: three lines only, each from the point mass to a tank top rim.
   const strutMat = new THREE.LineBasicMaterial({ color: 0x9aa7bd, transparent: true, opacity: 0.8 });
   const pts = [];
   for (const [vx, vy] of verts) {
     pts.push(new THREE.Vector3(0, 0, zMass), new THREE.Vector3(vx, vy, zTop));
-  }
-  for (let k = 0; k < 3; k++) {
-    const [ax, ay] = verts[k], [bx, by] = verts[(k + 1) % 3];
-    pts.push(new THREE.Vector3(ax, ay, 0), new THREE.Vector3(bx, by, 0));
-    pts.push(new THREE.Vector3(ax, ay, zTop), new THREE.Vector3(bx, by, zTop));
   }
   const struts = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), strutMat);
   craft.add(struts);
@@ -1163,7 +1158,7 @@ function updateFluid(render) {
 // ---------------------------------------------------------------------------
 // State + UI
 // ---------------------------------------------------------------------------
-const sim = new Simulator({ lateral_force_amp: 5, vertical_force_amp: 5, modal_zeta: 0.03, substeps: 4 });
+const sim = new Simulator({ lateral_force_amp: 2, vertical_force_amp: 2, modal_zeta: 0.03, substeps: 4 });
 // The dataset is nondimensional (capillary time units). One global conversion
 // makes Earth's first lateral mode match the real dimensional frequency of a
 // 1 m water tank at 1 g — omega_real = sqrt(g*1.841/R) ~ 4.25 rad/s vs the
@@ -1503,8 +1498,8 @@ fetch('data/models.json')
     DATA = data;
     R = data.R_tank;
     gain = data.config.surface_visual_gain;
-    sim.forceAmp = data.config.lateral_force_amp;
-    sim.zForceAmp = data.config.vertical_force_amp;
+    sim.forceAmp = 2;   // fixed 2 N thrust
+    sim.zForceAmp = 2;
     sim.substeps = data.config.substeps | 0;
     sim.setZeta(0.03);   // fixed modal damping ratio
     nR = data.shared.n_r; nPhi = data.shared.n_phi;
