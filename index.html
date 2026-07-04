@@ -163,7 +163,18 @@
     display: flex; align-items: center; justify-content: center; user-select: none;
   }
   .pad button:active, .pad button.press { background: var(--active); border-color: var(--active); color: #1b2450; }
+  .pad button.diag { font-size: 15px; color: var(--muted); }
   .pad .c { visibility: hidden; }
+  /* Spacecraft selector — vertical stack on the left edge of the demo. */
+  #craft-select {
+    position: absolute; z-index: 6; left: 16px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 6px; width: 92px;
+  }
+  #craft-select .head {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); text-align: center; margin-bottom: 2px;
+  }
+  #craft-select button.preset { flex: none; width: 100%; }
   .actions { display: flex; flex-direction: column; gap: 6px; pointer-events: auto; }
   .actions button { width: 52px; height: 52px; font-size: 13px; }
   #status { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); z-index:8;
@@ -341,15 +352,21 @@
   <div id="hud"></div>
   <div id="status"></div>
 
+  <div id="craft-select">
+    <div class="head">Spacecraft</div>
+    <button class="preset on" id="craft-sat">Satellite<small>bus + wings</small></button>
+    <button class="preset" id="craft-hm">Hail Mary<small>cylindrical hull</small></button>
+  </div>
+
   <div id="controls">
     <div class="pad">
-      <div class="c"></div>
+      <button data-force="fwd" class="diag" title="forward">⬈</button>
       <button data-force="up">▲</button>
       <div class="c"></div>
       <button data-force="left">◀</button>
       <div class="c"></div>
       <button data-force="right">▶</button>
-      <div class="c"></div>
+      <button data-force="back" class="diag" title="backward">⬋</button>
       <button data-force="down">▼</button>
       <div class="c"></div>
     </div>
@@ -732,21 +749,26 @@ class Simulator {
 
   setPreset(preset) {
     this.lateral = this._prepSector(preset.lateral);
+    // Tank is axisymmetric: the fore/aft (y) slosh dynamics use the same
+    // modal data as the x-lateral sector, with an independent state.
+    this.lateralY = this._prepSector(preset.lateral);
     this.vertical = this._prepSector(preset.vertical);
     this.dryMass = preset.dry_mass;
     this.nL = this.lateral.n;
     this.nV = this.vertical.n;
-    this.state = new Float64Array(4 + 2 * this.nL + 2 * this.nV);
-    this.t = 0; this.activeFx = 0; this.activeFz = 0;
+    // state = [x, xdot, y, ydot, z, zdot, aLx, aLxdot, aLy, aLydot, aV, aVdot]
+    this.state = new Float64Array(6 + 4 * this.nL + 2 * this.nV);
+    this.t = 0; this.activeFx = 0; this.activeFy = 0; this.activeFz = 0;
   }
 
   setZeta(z) {
     this.zeta = z;
     if (this.lateral) this._recomputeDamping(this.lateral);
+    if (this.lateralY) this._recomputeDamping(this.lateralY);
     if (this.vertical) this._recomputeDamping(this.vertical);
   }
 
-  reset() { this.state.fill(0); this.t = 0; this.activeFx = 0; this.activeFz = 0; }
+  reset() { this.state.fill(0); this.t = 0; this.activeFx = 0; this.activeFy = 0; this.activeFz = 0; }
 
   _sectorAccel(sector, rigidVel, forceCmd, modalState, modalVel, sOff) {
     const n = sector.n;
@@ -769,43 +791,48 @@ class Simulator {
     return sol; // sol[0]=rigid acc, sol[1..]=modal ddot
   }
 
-  _rhs(state, Fx, Fz, out) {
+  _rhs(state, Fx, Fy, Fz, out) {
     const nL = this.nL, nV = this.nV;
-    const xVel = state[1], zVel = state[3];
-    const aLat = state.subarray(4, 4 + nL);
-    const aLatDot = state.subarray(4 + nL, 4 + 2 * nL);
-    const aVert = state.subarray(4 + 2 * nL, 4 + 2 * nL + nV);
-    const aVertDot = state.subarray(4 + 2 * nL + nV, 4 + 2 * nL + 2 * nV);
+    const xVel = state[1], yVel = state[3], zVel = state[5];
+    let o = 6;
+    const aLat = state.subarray(o, o + nL);            o += nL;
+    const aLatDot = state.subarray(o, o + nL);         o += nL;
+    const aLatY = state.subarray(o, o + nL);           o += nL;
+    const aLatYDot = state.subarray(o, o + nL);        o += nL;
+    const aVert = state.subarray(o, o + nV);           o += nV;
+    const aVertDot = state.subarray(o, o + nV);
 
     const solL = this._sectorAccel(this.lateral, xVel, Fx, aLat, aLatDot);
+    const solY = this._sectorAccel(this.lateralY, yVel, Fy, aLatY, aLatYDot);
     const solV = this._sectorAccel(this.vertical, zVel, Fz, aVert, aVertDot);
 
-    out[0] = xVel;
-    out[1] = solL[0];
-    out[2] = zVel;
-    out[3] = solV[0];
-    let idx = 4;
+    out[0] = xVel; out[1] = solL[0];
+    out[2] = yVel; out[3] = solY[0];
+    out[4] = zVel; out[5] = solV[0];
+    let idx = 6;
     for (let i = 0; i < nL; i++) out[idx++] = aLatDot[i];
     for (let i = 0; i < nL; i++) out[idx++] = solL[1 + i];
+    for (let i = 0; i < nL; i++) out[idx++] = aLatYDot[i];
+    for (let i = 0; i < nL; i++) out[idx++] = solY[1 + i];
     for (let i = 0; i < nV; i++) out[idx++] = aVertDot[i];
     for (let i = 0; i < nV; i++) out[idx++] = solV[1 + i];
   }
 
-  advance(dt, Fx, Fz) {
+  advance(dt, Fx, Fy, Fz) {
     const h = dt / this.substeps;
-    this.activeFx = Fx; this.activeFz = Fz;
+    this.activeFx = Fx; this.activeFy = Fy; this.activeFz = Fz;
     const n = this.state.length;
     const k1 = new Float64Array(n), k2 = new Float64Array(n), k3 = new Float64Array(n), k4 = new Float64Array(n);
     const tmp = new Float64Array(n);
     for (let s = 0; s < this.substeps; s++) {
       const y = this.state;
-      this._rhs(y, Fx, Fz, k1);
+      this._rhs(y, Fx, Fy, Fz, k1);
       for (let i = 0; i < n; i++) tmp[i] = y[i] + 0.5 * h * k1[i];
-      this._rhs(tmp, Fx, Fz, k2);
+      this._rhs(tmp, Fx, Fy, Fz, k2);
       for (let i = 0; i < n; i++) tmp[i] = y[i] + 0.5 * h * k2[i];
-      this._rhs(tmp, Fx, Fz, k3);
+      this._rhs(tmp, Fx, Fy, Fz, k3);
       for (let i = 0; i < n; i++) tmp[i] = y[i] + h * k3[i];
-      this._rhs(tmp, Fx, Fz, k4);
+      this._rhs(tmp, Fx, Fy, Fz, k4);
       for (let i = 0; i < n; i++) y[i] += (h / 6) * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
       this.t += h;
     }
@@ -814,9 +841,10 @@ class Simulator {
   splitForRender() {
     const nL = this.nL, nV = this.nV;
     return {
-      xShift: this.state[0], zShift: this.state[2],
-      aLat: this.state.subarray(4, 4 + nL),
-      aVert: this.state.subarray(4 + 2 * nL, 4 + 2 * nL + nV),
+      xShift: this.state[0], yShift: this.state[2], zShift: this.state[4],
+      aLat: this.state.subarray(6, 6 + nL),
+      aLatY: this.state.subarray(6 + 2 * nL, 6 + 3 * nL),
+      aVert: this.state.subarray(6 + 4 * nL, 6 + 4 * nL + nV),
     };
   }
 }
@@ -898,9 +926,10 @@ let DATA = null, R = 1;
 let fluidMesh = null, fluidPos = null, fluidColor = null;
 let rimLine = null;
 let nR = 0, nPhi = 0;
-let X0 = null, Y0 = null, angLat = null, angVert = null;
+let X0 = null, Y0 = null, angLat = null, angVert = null, angLatY = null;
 let curPreset = null, curZ0 = null;
 let gain = 4.0;
+let craftStyle = 'sat';   // 'sat' | 'hm'
 
 function boxMesh(cx, cy, cz, sx, sy, sz, color, opacity, edge, opts = {}) {
   const geo = new THREE.BoxGeometry(sx, sy, sz);
@@ -933,7 +962,11 @@ function buildCraft(preset) {
     c.geometry?.dispose();
     c.material?.dispose?.();
   }
+  if (craftStyle === 'hm') buildCraftHailMary(preset);
+  else buildCraftSatellite(preset);
+}
 
+function buildCraftSatellite(preset) {
   const zTop = preset.z_top_tank;
   const zCom = zTop + 0.34 * R;
   const zPanel = zTop + 0.60 * R;
@@ -982,6 +1015,65 @@ function buildCraft(preset) {
   com.position.set(0, 0, zCom); craft.add(com);
 }
 
+// "Hail Mary" style ship: a long translucent cylindrical hull along z with
+// the cylindrical propellant tank amidships, nose cone, ring frames and four
+// aft spin-drive nacelles. Same tank + physics; only the shell differs.
+function buildCraftHailMary(preset) {
+  const zTop = preset.z_top_tank;
+  const hullR = 1.28 * R;
+  const hullZ0 = -1.5 * R, hullZ1 = zTop + 2.0 * R;
+  const hullLen = hullZ1 - hullZ0;
+
+  function cyl(rTop, rBot, h, cz, color, opacity, open = true) {
+    const g = new THREE.CylinderGeometry(rTop, rBot, h, 48, 1, open);
+    g.rotateX(Math.PI / 2); g.translate(0, 0, cz);
+    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+      color, transparent: opacity < 1, opacity, side: THREE.DoubleSide,
+      roughness: 0.45, metalness: 0.25, depthWrite: opacity >= 1,
+    }));
+    if (opacity < 1) m.renderOrder = 3;
+    return m;
+  }
+
+  // Glassy hull so the tank stays visible inside.
+  craft.add(cyl(hullR, hullR, hullLen, 0.5 * (hullZ0 + hullZ1), 0xDCE4EE, 0.07));
+  // Ring frames along the hull.
+  for (const fz of [hullZ0 + 0.15 * hullLen, 0.5 * (hullZ0 + hullZ1), hullZ1 - 0.15 * hullLen]) {
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(hullR, 0.03 * R, 10, 64),
+      new THREE.MeshStandardMaterial({ color: 0x9aa7bd, roughness: 0.5 }));
+    ring.position.z = fz; craft.add(ring);
+  }
+  // Nose cone (fore, +z).
+  const nose = cyl(0.06 * R, hullR, 1.4 * R, hullZ1 + 0.7 * R, 0xC7D2E2, 1.0, false);
+  craft.add(nose);
+  // Aft skirt + four spin-drive nacelles.
+  craft.add(cyl(hullR, 0.85 * hullR, 0.6 * R, hullZ0 - 0.3 * R, 0xC7D2E2, 1.0, false));
+  for (let k = 0; k < 4; k++) {
+    const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
+    const nx = Math.cos(a) * 0.95 * hullR, ny = Math.sin(a) * 0.95 * hullR;
+    const nac = cyl(0.16 * R, 0.22 * R, 0.9 * R, 0, 0x30589E, 1.0, false);
+    nac.position.set(nx, ny, hullZ0 - 0.85 * R);
+    craft.add(nac);
+    // Orange engine glow disk.
+    const glow = new THREE.Mesh(new THREE.CircleGeometry(0.2 * R, 24),
+      new THREE.MeshBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+    glow.position.set(nx, ny, hullZ0 - 1.32 * R);
+    craft.add(glow);
+  }
+  // Tank wall + bottom (same as satellite version).
+  const wallGeo = new THREE.CylinderGeometry(R, R, zTop, 64, 1, true);
+  wallGeo.rotateX(Math.PI / 2); wallGeo.translate(0, 0, zTop / 2);
+  const wallMesh = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({
+    color: 0xEAF1F8, transparent: true, opacity: 0.1, side: THREE.DoubleSide,
+    roughness: 0.2, metalness: 0.1, depthWrite: false,
+  }));
+  wallMesh.renderOrder = 3; craft.add(wallMesh);
+  const botMesh = new THREE.Mesh(new THREE.CircleGeometry(R, 64),
+    new THREE.MeshStandardMaterial({ color: 0x0D47A1, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
+  botMesh.renderOrder = 2; craft.add(botMesh);
+}
+
 function buildFluid() {
   // Topology is constant across presets; build once.
   const geo = new THREE.BufferGeometry();
@@ -1015,22 +1107,21 @@ function buildFluid() {
 }
 
 function updateFluid(render) {
-  const { aLat, aVert } = render;
+  const { aLat, aLatY, aVert } = render;
   const nLat = sim.nL, nVert = sim.nV;
   const shapeL = sim.lateral.shapeR, shapeV = sim.vertical.shapeR;
   let zmin = Infinity, zmax = -Infinity;
-  const zRow = new Float64Array(nR);
-  const latDisp = new Float64Array(nR), vertDisp = new Float64Array(nR);
+  const latDisp = new Float64Array(nR), latDispY = new Float64Array(nR), vertDisp = new Float64Array(nR);
   for (let i = 0; i < nR; i++) {
-    let sl = 0, sv = 0;
-    for (let p = 0; p < nLat; p++) sl += shapeL[i * nLat + p] * aLat[p];
+    let sl = 0, sy = 0, sv = 0;
+    for (let p = 0; p < nLat; p++) { sl += shapeL[i * nLat + p] * aLat[p]; sy += shapeL[i * nLat + p] * aLatY[p]; }
     for (let p = 0; p < nVert; p++) sv += shapeV[i * nVert + p] * aVert[p];
-    latDisp[i] = sl; vertDisp[i] = sv;
+    latDisp[i] = sl; latDispY[i] = sy; vertDisp[i] = sv;
   }
   for (let i = 0; i < nR; i++) {
     for (let j = 0; j < nPhi; j++) {
       const idx = i * nPhi + j;
-      const z = curZ0[idx] + gain * (latDisp[i] * angLat[j] + vertDisp[i] * angVert[j]);
+      const z = curZ0[idx] + gain * (latDisp[i] * angLat[j] + latDispY[i] * angLatY[j] + vertDisp[i] * angVert[j]);
       fluidPos[idx * 3 + 0] = X0[idx];
       fluidPos[idx * 3 + 1] = Y0[idx];
       fluidPos[idx * 3 + 2] = z;
@@ -1070,7 +1161,7 @@ const sim = new Simulator({ lateral_force_amp: 5, vertical_force_amp: 5, modal_z
 const TIME_SCALE = 13.3;
 let gi = 0, pi = 0, fi = 1;   // gravity / propellant / fill indices
 let timeSpeed = 1.0, paused = false;
-const held = { left: false, right: false, up: false, down: false };
+const held = { left: false, right: false, up: false, down: false, fwd: false, back: false };
 let lastWall = performance.now() / 1000;
 
 function presetKey(g, p, f) { return `g${g}_p${p}_f${f}`; }
@@ -1195,26 +1286,39 @@ function buildUI() {
     b.addEventListener('pointercancel', off);
   });
   // Keyboard for desktop.
-  const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
+  const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', w: 'fwd', s: 'back' };
   window.addEventListener('keydown', (e) => {
     if (map[e.key]) { held[map[e.key]] = true; e.preventDefault(); }
     else if (e.key === 'r') { sim.reset(); }
     else if (e.key === 'p') { paused = !paused; pauseBtn.textContent = paused ? 'Play' : 'Pause'; }
   });
   window.addEventListener('keyup', (e) => { if (map[e.key]) { held[map[e.key]] = false; e.preventDefault(); } });
+
+  // Spacecraft selector.
+  const satBtn = document.getElementById('craft-sat'), hmBtn = document.getElementById('craft-hm');
+  function setCraft(style) {
+    craftStyle = style;
+    satBtn.classList.toggle('on', style === 'sat');
+    hmBtn.classList.toggle('on', style === 'hm');
+    if (curPreset) buildCraft(curPreset);
+  }
+  satBtn.onclick = () => setCraft('sat');
+  hmBtn.onclick = () => setCraft('hm');
 }
 
 function currentForce() {
-  let fx = 0, fz = 0;
+  let fx = 0, fy = 0, fz = 0;
   if (held.right) fx += sim.forceAmp;
   if (held.left) fx -= sim.forceAmp;
+  if (held.fwd) fy += sim.forceAmp;
+  if (held.back) fy -= sim.forceAmp;
   if (held.up) fz += sim.zForceAmp;
   if (held.down) fz -= sim.zForceAmp;
-  return [fx, fz];
+  return [fx, fy, fz];
 }
 
 const hud = document.getElementById('hud');
-function updateHUD(render, fx, fz) {
+function updateHUD(render, fx, fy, fz) {
   const om1 = curPreset ? curPreset.lateral.omega[0] * TIME_SCALE : 0;
   const f1 = om1 / (2 * Math.PI);
   hud.innerHTML =
@@ -1222,8 +1326,8 @@ function updateHUD(render, fx, fz) {
     `<b>${DATA.gravity[gi].name}</b> · ${DATA.propellant[pi].name} · fill ${DATA.fill[fi].toFixed(2)}<br>` +
     `Bo = <b>${curPreset ? curPreset.bo.toFixed(curPreset.bo < 1 ? 2 : 0) : '–'}</b>&nbsp; ` +
     `f₁ = <b>${f1 >= 0.05 ? f1.toFixed(2) + ' Hz' : (1 / f1).toFixed(0) + ' s'}</b><br>` +
-    `x/R = <b>${(render.xShift / R).toFixed(2)}</b>&nbsp; z/R = <b>${(render.zShift / R).toFixed(2)}</b><br>` +
-    `Fx = <b>${fx.toFixed(0)} N</b>&nbsp; Fz = <b>${fz.toFixed(0)} N</b>` +
+    `x/R = <b>${(render.xShift / R).toFixed(2)}</b>&nbsp; y/R = <b>${(render.yShift / R).toFixed(2)}</b>&nbsp; z/R = <b>${(render.zShift / R).toFixed(2)}</b><br>` +
+    `Fx = <b>${fx.toFixed(0)} N</b>&nbsp; Fy = <b>${fy.toFixed(0)} N</b>&nbsp; Fz = <b>${fz.toFixed(0)} N</b>` +
     (paused ? '<br><b style="color:#ec7a2c">PAUSED</b>' : '');
 }
 
@@ -1232,19 +1336,19 @@ function animate() {
   const now = performance.now() / 1000;
   let wallDt = Math.min(Math.max(now - lastWall, 1e-3), 0.12);
   lastWall = now;
-  const [fx, fz] = currentForce();
+  const [fx, fy, fz] = currentForce();
   if (!paused) {
     const dtSim = wallDt * timeSpeed * TIME_SCALE;
     // Keep RK4 stable at high playback speeds: cap the substep size.
     sim.substeps = Math.max(4, Math.ceil(dtSim / 0.35));
-    sim.advance(dtSim, fx, fz);
+    sim.advance(dtSim, fx, fy, fz);
   }
-  else { sim.activeFx = 0; sim.activeFz = 0; }
+  else { sim.activeFx = 0; sim.activeFy = 0; sim.activeFz = 0; }
 
   const render = sim.splitForRender();
   updateFluid(render);
-  craft.position.set(render.xShift, 0, render.zShift);
-  updateHUD(render, paused ? 0 : fx, paused ? 0 : fz);
+  craft.position.set(render.xShift, render.yShift, render.zShift);
+  updateHUD(render, paused ? 0 : fx, paused ? 0 : fy, paused ? 0 : fz);
 
   controls.update();
   renderer.render(scene, camera);
@@ -1398,6 +1502,14 @@ fetch('data/models.json')
     Y0 = Float64Array.from(data.shared.Y0);
     angLat = Float64Array.from(data.shared.angular_lat);
     angVert = Float64Array.from(data.shared.angular_vert);
+    // Fore/aft (y) angular pattern: same first azimuthal mode rotated 90°,
+    // i.e. sin(phi) where angular_lat is cos(phi). Recover phi from the
+    // outermost grid ring (nonzero radius on every column).
+    angLatY = new Float64Array(nPhi);
+    for (let j = 0; j < nPhi; j++) {
+      const idx = (nR - 1) * nPhi + j;
+      angLatY[j] = Math.sin(Math.atan2(Y0[idx], X0[idx]));
+    }
     // Pick a default preset that exists (prefer Micro-g so slosh is visible).
     fi = Math.min(1, data.fill.length - 1);
     gi = data.gravity.findIndex((_, i) => available(i, 0, fi));
