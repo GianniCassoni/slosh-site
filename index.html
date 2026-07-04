@@ -163,7 +163,7 @@
     display: flex; align-items: center; justify-content: center; user-select: none;
   }
   .pad button:active, .pad button.press { background: var(--active); border-color: var(--active); color: #1b2450; }
-  .pad button.diag { font-size: 15px; color: var(--muted); }
+  .actions button:active, .actions button.press { background: var(--active); border-color: var(--active); color: #1b2450; }
   .pad .c { visibility: hidden; }
   /* Spacecraft selector — vertical stack on the left edge of the demo. */
   #craft-select {
@@ -360,17 +360,19 @@
 
   <div id="controls">
     <div class="pad">
-      <button data-force="fwd" class="diag" title="forward">⬈</button>
-      <button data-force="up">▲</button>
+      <div class="c"></div>
+      <button data-force="fwd" title="forward">▲</button>
       <div class="c"></div>
       <button data-force="left">◀</button>
       <div class="c"></div>
       <button data-force="right">▶</button>
-      <button data-force="back" class="diag" title="backward">⬋</button>
-      <button data-force="down">▼</button>
+      <div class="c"></div>
+      <button data-force="back" title="backward">▼</button>
       <div class="c"></div>
     </div>
     <div class="actions">
+      <button data-force="up" title="thrust up">Z+</button>
+      <button data-force="down" title="thrust down">Z−</button>
       <button id="btn-reset">Reset</button>
       <button id="btn-pause">Pause</button>
     </div>
@@ -1015,13 +1017,13 @@ function buildCraftSatellite(preset) {
   com.position.set(0, 0, zCom); craft.add(com);
 }
 
-// "Hail Mary" style ship: a long translucent cylindrical hull along z with
-// the cylindrical propellant tank amidships, nose cone, ring frames and four
-// aft spin-drive nacelles. Same tank + physics; only the shell differs.
+// "Hail Mary" style ship: three parallel cylindrical tank hulls docked to a
+// central body, plus a long crossing solar-panel truss (see reference photo).
+// The centre tank is the live propellant tank; physics is unchanged.
 function buildCraftHailMary(preset) {
   const zTop = preset.z_top_tank;
-  const hullR = 1.28 * R;
-  const hullZ0 = -1.5 * R, hullZ1 = zTop + 2.0 * R;
+  const hullR = 1.12 * R;
+  const hullZ0 = -0.6 * R, hullZ1 = zTop + 0.9 * R;
   const hullLen = hullZ1 - hullZ0;
 
   function cyl(rTop, rBot, h, cz, color, opacity, open = true) {
@@ -1035,33 +1037,65 @@ function buildCraftHailMary(preset) {
     return m;
   }
 
-  // Glassy hull so the tank stays visible inside.
-  craft.add(cyl(hullR, hullR, hullLen, 0.5 * (hullZ0 + hullZ1), 0xDCE4EE, 0.07));
-  // Ring frames along the hull.
-  for (const fz of [hullZ0 + 0.15 * hullLen, 0.5 * (hullZ0 + hullZ1), hullZ1 - 0.15 * hullLen]) {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(hullR, 0.03 * R, 10, 64),
+  // Central body: stubby hub between the tanks, aft of the centre tank.
+  const hub = new THREE.Mesh(
+    new THREE.SphereGeometry(1.05 * R, 32, 20),
+    new THREE.MeshStandardMaterial({ color: 0xC7D2E2, roughness: 0.5, metalness: 0.3 }));
+  hub.scale.z = 0.75;
+  hub.position.z = hullZ0 - 0.55 * R;
+  craft.add(hub);
+  // Aft instrument boom out the back of the hub.
+  const boom = cyl(0.08 * R, 0.08 * R, 2.0 * R, hub.position.z - 1.3 * R, 0x9aa7bd, 1.0, false);
+  craft.add(boom);
+  const dish = new THREE.Mesh(new THREE.SphereGeometry(0.3 * R, 20, 12),
+    new THREE.MeshStandardMaterial({ color: 0xDCE4EE, roughness: 0.4 }));
+  dish.position.z = hub.position.z - 2.35 * R; craft.add(dish);
+
+  // Three parallel tank hulls: centre one is the live tank (glassy), the two
+  // outboard ones are sealed opaque hulls with nose caps.
+  const OFF = 2.05 * R;
+  for (const [ox, live] of [[0, true], [-OFF, false], [OFF, false]]) {
+    const shell = cyl(hullR, hullR, hullLen, 0.5 * (hullZ0 + hullZ1), 0xDCE4EE, live ? 0.07 : 0.85);
+    shell.position.x = ox; craft.add(shell);
+    // Nose cap (fore) + aft cap.
+    const nose = cyl(0.12 * R, hullR, 0.9 * R, hullZ1 + 0.45 * R, 0xC7D2E2, 1.0, false);
+    nose.position.x = ox; craft.add(nose);
+    const aft = cyl(hullR, 0.5 * hullR, 0.55 * R, hullZ0 - 0.27 * R, 0xB6C2D4, 1.0, false);
+    aft.position.x = ox; craft.add(aft);
+    // Docking strut to the hub.
+    if (ox !== 0) {
+      const strut = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(ox), 0.14 * R, 0.14 * R),
+        new THREE.MeshStandardMaterial({ color: 0x9aa7bd, roughness: 0.5 }));
+      strut.position.set(ox / 2, 0, hullZ0 - 0.35 * R);
+      craft.add(strut);
+    }
+    // Ring frames.
+    for (const fz of [hullZ0 + 0.22 * hullLen, hullZ0 + 0.72 * hullLen]) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(hullR, 0.028 * R, 8, 48),
+        new THREE.MeshStandardMaterial({ color: 0x9aa7bd, roughness: 0.5 }));
+      ring.position.set(ox, 0, fz); craft.add(ring);
+    }
+  }
+
+  // Long solar-panel truss crossing the central body (like the photo):
+  // segmented dark-blue panels running along y on both sides.
+  const segLen = 0.9 * R, segGap = 0.08 * R, nSeg = 6;
+  for (const sign of [1, -1]) {
+    for (let k = 0; k < nSeg; k++) {
+      const y = sign * (1.4 * R + segLen / 2 + k * (segLen + segGap));
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.9 * R, segLen, 0.04 * R),
+        new THREE.MeshStandardMaterial({ color: 0x1B3A8C, roughness: 0.35, metalness: 0.4 }));
+      panel.position.set(0, y, hub.position.z);
+      craft.add(panel);
+    }
+    // Truss rail.
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1 * R, nSeg * (segLen + segGap), 0.1 * R),
       new THREE.MeshStandardMaterial({ color: 0x9aa7bd, roughness: 0.5 }));
-    ring.position.z = fz; craft.add(ring);
+    rail.position.set(0, sign * (1.4 * R + nSeg * (segLen + segGap) / 2), hub.position.z);
+    craft.add(rail);
   }
-  // Nose cone (fore, +z).
-  const nose = cyl(0.06 * R, hullR, 1.4 * R, hullZ1 + 0.7 * R, 0xC7D2E2, 1.0, false);
-  craft.add(nose);
-  // Aft skirt + four spin-drive nacelles.
-  craft.add(cyl(hullR, 0.85 * hullR, 0.6 * R, hullZ0 - 0.3 * R, 0xC7D2E2, 1.0, false));
-  for (let k = 0; k < 4; k++) {
-    const a = (k / 4) * Math.PI * 2 + Math.PI / 4;
-    const nx = Math.cos(a) * 0.95 * hullR, ny = Math.sin(a) * 0.95 * hullR;
-    const nac = cyl(0.16 * R, 0.22 * R, 0.9 * R, 0, 0x30589E, 1.0, false);
-    nac.position.set(nx, ny, hullZ0 - 0.85 * R);
-    craft.add(nac);
-    // Orange engine glow disk.
-    const glow = new THREE.Mesh(new THREE.CircleGeometry(0.2 * R, 24),
-      new THREE.MeshBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
-    glow.position.set(nx, ny, hullZ0 - 1.32 * R);
-    craft.add(glow);
-  }
-  // Tank wall + bottom (same as satellite version).
+
+  // Live tank internals: wall + bottom (fluid mesh sits at the origin).
   const wallGeo = new THREE.CylinderGeometry(R, R, zTop, 64, 1, true);
   wallGeo.rotateX(Math.PI / 2); wallGeo.translate(0, 0, zTop / 2);
   const wallMesh = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({
@@ -1276,7 +1310,7 @@ function buildUI() {
   pauseBtn.onclick = () => { paused = !paused; pauseBtn.textContent = paused ? 'Play' : 'Pause'; lastWall = performance.now() / 1000; };
 
   // Thruster pads (pointer = mouse + touch).
-  document.querySelectorAll('.pad button[data-force]').forEach((b) => {
+  document.querySelectorAll('button[data-force]').forEach((b) => {
     const dir = b.dataset.force;
     const on = (e) => { e.preventDefault(); held[dir] = true; b.classList.add('press'); };
     const off = (e) => { e.preventDefault(); held[dir] = false; b.classList.remove('press'); };
@@ -1285,8 +1319,8 @@ function buildUI() {
     b.addEventListener('pointerleave', off);
     b.addEventListener('pointercancel', off);
   });
-  // Keyboard for desktop.
-  const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', w: 'fwd', s: 'back' };
+  // Keyboard for desktop: arrows = lateral + fore/aft, w/s = vertical.
+  const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'fwd', ArrowDown: 'back', w: 'up', s: 'down' };
   window.addEventListener('keydown', (e) => {
     if (map[e.key]) { held[map[e.key]] = true; e.preventDefault(); }
     else if (e.key === 'r') { sim.reset(); }
