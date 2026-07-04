@@ -138,7 +138,7 @@
 
   /* Thruster D-pad + action buttons */
   #controls {
-    position: absolute; z-index: 6; bottom: 190px; width: 100%;
+    position: absolute; z-index: 6; bottom: 258px; width: 100%;
     display: flex; justify-content: space-between; align-items: flex-end;
     padding: 0 16px; pointer-events: none;
   }
@@ -159,12 +159,12 @@
     #title h1 { font-size: 16px; }
     #title p { display: none; }
     #hud { top: 70px; font-size: 11px; }
-    #controls { bottom: 250px; padding: 0 12px; }
+    #controls { bottom: 318px; padding: 0 12px; }
   }
   @media (max-width: 480px) {
     .pad { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); }
     .actions button { width: 46px; height: 46px; }
-    #controls { bottom: 262px; }
+    #controls { bottom: 330px; }
   }
 
   /* Scroll cue at the bottom of the demo */
@@ -322,7 +322,7 @@
   <div id="scene"></div>
   <div id="title">
     <h1>Spacecraft rigid-body + gravity-capillarity slosh</h1>
-    <p>coupled reduced-order model &middot; hold the thruster pads to perturb the tank</p>
+    <p>coupled reduced-order model in real time &middot; hold the thruster pads to perturb the tank</p>
   </div>
   <div id="hud"></div>
   <div id="status"></div>
@@ -355,8 +355,16 @@
       <div class="btns" id="propellant-btns"></div>
     </div>
     <div class="row">
+      <div class="lab">Fill h/R</div>
+      <div class="slider"><input id="fill" type="range" min="0" max="3" step="1" value="1" /><span class="val" id="fill-val">–</span></div>
+    </div>
+    <div class="row">
+      <div class="lab">Damping ζ</div>
+      <div class="slider"><input id="zeta" type="range" min="0.002" max="0.08" step="0.002" value="0.015" /><span class="val" id="zeta-val">0.015</span></div>
+    </div>
+    <div class="row">
       <div class="lab">Time ×</div>
-      <div class="slider"><input id="speed" type="range" min="0.25" max="5" step="0.25" value="2" /><span class="val" id="speed-val">2.0×</span></div>
+      <div class="slider"><input id="speed" type="range" min="0.25" max="5" step="0.25" value="1" /><span class="val" id="speed-val">1.0×</span></div>
     </div>
   </div>
   <a id="scroll-cue" href="#about">▼ research &amp; publications</a>
@@ -549,9 +557,9 @@
 
     <div class="lenia-box">
       <canvas id="lenia-glider"></canvas>
-      <div class="cap"><b>A live Lenia &ldquo;orbium&rdquo; glider.</b> A continuous-space cellular automaton
-        running in your browser: a self-organizing coherent structure that translates while preserving its
-        shape.</div>
+      <div class="cap"><b>A live multi-kernel Lenia organism.</b> A continuous-space cellular automaton
+        evolved with MAP-Elites: two coupled growth kernels keep a coherent structure alive while it
+        translates. Move your pointer over it to attract the organism; click or tap to drop food.</div>
     </div>
 
     <div class="grid2">
@@ -1036,8 +1044,13 @@ function updateFluid(render) {
 // State + UI
 // ---------------------------------------------------------------------------
 const sim = new Simulator({ lateral_force_amp: 5, vertical_force_amp: 5, modal_zeta: 0.015, substeps: 4 });
+// The dataset is nondimensional (capillary time units). One global conversion
+// makes Earth's first lateral mode match the real dimensional frequency of a
+// 1 m water tank at 1 g — omega_real = sqrt(g*1.841/R) ~ 4.25 rad/s vs the
+// stored 0.319 rad/s — while preserving the correct ratios across gravities.
+const TIME_SCALE = 13.3;
 let gi = 0, pi = 0, fi = 1;   // gravity / propellant / fill indices
-let timeSpeed = 2.0, paused = false;
+let timeSpeed = 1.0, paused = false;
 const held = { left: false, right: false, up: false, down: false };
 let lastWall = performance.now() / 1000;
 
@@ -1194,8 +1207,13 @@ function currentForce() {
 
 const hud = document.getElementById('hud');
 function updateHUD(render, fx, fz) {
+  const om1 = curPreset ? curPreset.lateral.omega[0] * TIME_SCALE : 0;
+  const f1 = om1 / (2 * Math.PI);
   hud.innerHTML =
-    `t = <b>${sim.t.toFixed(2)} s</b><br>` +
+    `t = <b>${(sim.t / TIME_SCALE).toFixed(1)} s</b>&nbsp; ` +
+    `<b>${DATA.gravity[gi].name}</b> · ${DATA.propellant[pi].name} · fill ${DATA.fill[fi].toFixed(2)}<br>` +
+    `Bo = <b>${curPreset ? curPreset.bo.toFixed(curPreset.bo < 1 ? 2 : 0) : '–'}</b>&nbsp; ` +
+    `f₁ = <b>${f1 >= 0.05 ? f1.toFixed(2) + ' Hz' : (1 / f1).toFixed(0) + ' s'}</b><br>` +
     `x/R = <b>${(render.xShift / R).toFixed(2)}</b>&nbsp; z/R = <b>${(render.zShift / R).toFixed(2)}</b><br>` +
     `Fx = <b>${fx.toFixed(0)} N</b>&nbsp; Fz = <b>${fz.toFixed(0)} N</b>` +
     (paused ? '<br><b style="color:#ec7a2c">PAUSED</b>' : '');
@@ -1207,7 +1225,12 @@ function animate() {
   let wallDt = Math.min(Math.max(now - lastWall, 1e-3), 0.12);
   lastWall = now;
   const [fx, fz] = currentForce();
-  if (!paused) sim.advance(wallDt * timeSpeed, fx, fz);
+  if (!paused) {
+    const dtSim = wallDt * timeSpeed * TIME_SCALE;
+    // Keep RK4 stable at high playback speeds: cap the substep size.
+    sim.substeps = Math.max(4, Math.ceil(dtSim / 0.35));
+    sim.advance(dtSim, fx, fz);
+  }
   else { sim.activeFx = 0; sim.activeFz = 0; }
 
   const render = sim.splitForRender();
@@ -1358,7 +1381,6 @@ fetch('data/models.json')
     DATA = data;
     R = data.R_tank;
     gain = data.config.surface_visual_gain;
-    timeSpeed = data.config.time_speed;
     sim.forceAmp = data.config.lateral_force_amp;
     sim.zForceAmp = data.config.vertical_force_amp;
     sim.substeps = data.config.substeps | 0;
@@ -1415,10 +1437,13 @@ fetch('data/models.json')
 
 <script>
 // ---------------------------------------------------------------------------
-// Live Lenia "orbium" glider — a continuous-space cellular automaton.
-// Standard Lenia: A_{t+1} = clip(A + (1/T) * G(K * A), 0, 1), with an
-// exponential shell kernel and a Gaussian growth mapping. The canonical
-// Orbium is a stable glider that translates while keeping its shape.
+// Live multi-kernel Lenia organism — a continuous-space cellular automaton.
+// A_{t+1} = clip(A + (1/T) * sum_k w_k G_k(K_k * A) / sum w_k, 0, 1), with
+// exponential shell kernels and Gaussian growth mappings. Two kernels (an
+// Orbium-scale ring plus a small two-shell ring, weights 1.0/0.2 — verified
+// stable offline) give richer internal dynamics than a single ring.
+// The pointer adds a nutrient field G += gain*M*(1-A): the organism drifts
+// toward your cursor. Click/tap injects a food blob it has to digest.
 // Runs only while the section is visible; auto-reseeds if it dies/blows up.
 // ---------------------------------------------------------------------------
 (function initLeniaGlider() {
@@ -1427,8 +1452,8 @@ fetch('data/models.json')
   if (!cvs || !section) return;
   const ctx = cvs.getContext('2d');
 
-  // --- Lenia parameters (canonical Orbium) ---
-  const R = 13, T = 10, MU = 0.15, SIGMA = 0.015;
+  // --- Lenia parameters ---
+  const T = 10;
   const mobile = window.innerWidth < 620;
   // The grid is a torus: to stop the kernel (reach R) from wrapping into the
   // glider's own body (~20 cells) it must exceed 20 + 2R = 46 in each axis.
@@ -1458,35 +1483,48 @@ fetch('data/models.json')
     [0,0,0,0,0,0,0,0.22,0.35,0.35,0.28,0.13,0,0,0,0,0,0,0,0],
   ];
 
-  // Precompute the normalized exponential shell kernel as sparse offsets.
-  // Negligible-weight offsets (the exp shell is concentrated near d=0.5) are
-  // pruned so the per-cell convolution stays cheap enough for phones.
-  const raw = [];
-  let ksum = 0;
-  for (let dy = -R; dy <= R; dy++) {
-    for (let dx = -R; dx <= R; dx++) {
-      const d = Math.sqrt(dx * dx + dy * dy) / R;
-      if (d > 0 && d < 1) {
-        const w = Math.exp(4 - 1 / (d * (1 - d)));  // exp core, alpha=4
-        raw.push([dx, dy, w]); ksum += w;
+  // Precompute normalized exponential shell kernels as flat typed offset
+  // arrays. Multi-shell profiles use per-shell beta weights (as in the
+  // MAP-Elites search code). Negligible weights are pruned for speed.
+  function buildKernel(R, beta) {
+    const raw = [];
+    let ksum = 0;
+    const shells = beta.length;
+    for (let dy = -R; dy <= R; dy++) {
+      for (let dx = -R; dx <= R; dx++) {
+        const d = Math.sqrt(dx * dx + dy * dy) / R;
+        if (d > 0 && d < 1) {
+          const sid = Math.min(Math.floor(d * shells), shells - 1);
+          const lr = d * shells - sid;
+          if (lr > 0 && lr < 1) {
+            const w = beta[sid] * Math.exp(4 - 1 / (lr * (1 - lr)));
+            raw.push([dx, dy, w]); ksum += w;
+          }
+        }
       }
     }
+    const koff = [];
+    let ksum2 = 0;
+    const thresh = ksum * 1e-4;
+    for (const o of raw) if (o[2] >= thresh) { koff.push(o); ksum2 += o[2]; }
+    const KN = koff.length;
+    const kdx = new Int32Array(KN), kdy = new Int32Array(KN), kw = new Float32Array(KN);
+    for (let i = 0; i < KN; i++) { kdx[i] = koff[i][0]; kdy[i] = koff[i][1]; kw[i] = koff[i][2] / ksum2; }
+    return { KN, kdx, kdy, kw };
   }
-  const koff = [];
-  let ksum2 = 0;
-  const thresh = ksum * 1e-4;
-  for (const o of raw) if (o[2] >= thresh) { koff.push(o); ksum2 += o[2]; }
-  for (const o of koff) o[2] /= ksum2;
 
-  // Flatten the kernel into typed arrays (no per-element property lookups) and
-  // build wrap lookup tables so the hot loop needs no modulo per neighbour.
-  // Together these give a large speed-up on old low-end phones.
-  const KN = koff.length;
-  const kdx = new Int32Array(KN), kdy = new Int32Array(KN), kw = new Float32Array(KN);
-  for (let i = 0; i < KN; i++) { kdx[i] = koff[i][0]; kdy[i] = koff[i][1]; kw[i] = koff[i][2]; }
-  const wx = new Int32Array(GW + 2 * R), wy = new Int32Array(GH + 2 * R);
-  for (let i = 0; i < wx.length; i++) wx[i] = ((i - R) % GW + GW) % GW;
-  for (let i = 0; i < wy.length; i++) wy[i] = ((i - R) % GH + GH) % GH;
+  // Two growth kernels: the canonical Orbium ring + a small two-shell ring.
+  const KERNELS = [
+    { k: buildKernel(13, [1.0]),      mu: 0.15, sig: 0.017, w: 1.0 },
+    { k: buildKernel(6,  [1.0, 0.4]), mu: 0.22, sig: 0.03,  w: 0.2 },
+  ];
+  const WSUM = KERNELS.reduce((s, K) => s + K.w, 0);
+  const RMAX = 13;
+
+  // Wrap lookup tables: the hot loop needs no modulo per neighbour.
+  const wx = new Int32Array(GW + 2 * RMAX), wy = new Int32Array(GH + 2 * RMAX);
+  for (let i = 0; i < wx.length; i++) wx[i] = ((i - RMAX) % GW + GW) % GW;
+  for (let i = 0; i < wy.length; i++) wy[i] = ((i - RMAX) % GH + GH) % GH;
 
   let A = new Float32Array(GW * GH);
   let B = new Float32Array(GW * GH);
@@ -1505,23 +1543,72 @@ fetch('data/models.json')
   }
   seed();
 
+  // Pointer nutrient field: while the cursor is over the canvas the growth
+  // gets +gain*M*(1-A), a soft attractor (verified to keep the organism
+  // coherent offline for gain<=0.4, sigma~10).
+  const M_GAIN = 0.4, M_SIG = 10;
+  let pOver = false, pmy = 0, pmx = 0;
+
   function step() {
+    const s2 = 2 * M_SIG * M_SIG;
     for (let y = 0; y < GH; y++) {
-      const yb = y + R, row = y * GW;
+      const yb = y + RMAX, row = y * GW;
       for (let x = 0; x < GW; x++) {
-        const xb = x + R;
-        let u = 0;
-        for (let i = 0; i < KN; i++) {
-          u += A[wy[yb + kdy[i]] * GW + wx[xb + kdx[i]]] * kw[i];
+        const xb = x + RMAX;
+        let g = 0;
+        for (let kk = 0; kk < KERNELS.length; kk++) {
+          const K = KERNELS[kk], KD = K.k;
+          let u = 0;
+          for (let i = 0; i < KD.KN; i++) {
+            u += A[wy[yb + KD.kdy[i]] * GW + wx[xb + KD.kdx[i]]] * KD.kw[i];
+          }
+          g += K.w * (2 * bell(u, K.mu, K.sig) - 1);
         }
-        const g = 2 * bell(u, MU, SIGMA) - 1;   // growth in [-1, 1]
-        let v = A[row + x] + g / T;
+        g /= WSUM;
+        const a = A[row + x];
+        if (pOver) {
+          const dy = y - pmy, dx = x - pmx;
+          g += M_GAIN * Math.exp(-(dy * dy + dx * dx) / s2) * (1 - a);
+        }
+        let v = a + g / T;
         v = v < 0 ? 0 : v > 1 ? 1 : v;
         B[row + x] = v;
       }
     }
     const t = A; A = B; B = t;
   }
+
+  // Food drop: inject a soft Gaussian blob of matter at (gy, gx).
+  function dropFood(gy, gx, amp = 0.55, width = 3.5) {
+    const w2 = 2 * width * width, reach = Math.ceil(width * 3);
+    for (let y = Math.max(0, gy - reach); y < Math.min(GH, gy + reach); y++) {
+      for (let x = Math.max(0, gx - reach); x < Math.min(GW, gx + reach); x++) {
+        const dy = y - gy, dx = x - gx;
+        const v = A[y * GW + x] + amp * Math.exp(-(dy * dy + dx * dx) / w2);
+        A[y * GW + x] = v > 1 ? 1 : v;
+      }
+    }
+  }
+
+  // Pointer handling: map canvas CSS pixels to grid cells.
+  function toGrid(e) {
+    const r = cvs.getBoundingClientRect();
+    return [
+      Math.round((e.clientY - r.top) / r.height * GH),
+      Math.round((e.clientX - r.left) / r.width * GW),
+    ];
+  }
+  cvs.addEventListener('pointermove', (e) => {
+    [pmy, pmx] = toGrid(e); pOver = true;
+  });
+  cvs.addEventListener('pointerleave', () => { pOver = false; });
+  cvs.addEventListener('pointerdown', (e) => {
+    const [gy, gx] = toGrid(e);
+    dropFood(gy, gx);
+    [pmy, pmx] = [gy, gx]; pOver = true;
+  });
+  cvs.style.cursor = 'crosshair';
+  cvs.style.touchAction = 'pan-y';   // taps feed it, page can still scroll
 
   // Colour ramp: page navy (empty) -> lighter blue -> orange -> beige.
   function ramp(v, o, idx) {
@@ -1565,9 +1652,10 @@ fetch('data/models.json')
     acc += dt;
     while (acc >= DT) {
       step(); acc -= DT; steps++;
-      // Safety: reseed if the glider died, blew up, or drifted too long.
+      // Safety: reseed if the organism died or blew up. Periodic reseed only
+      // when idle, so interaction is never interrupted.
       const m = mass();
-      if (m < 3 || m > GW * GH * 0.5 || steps > 1200) { seed(); steps = 0; }
+      if (m < 3 || m > GW * GH * 0.5 || (!pOver && steps > 2400)) { seed(); steps = 0; }
     }
     draw();
     raf = requestAnimationFrame(loop);
