@@ -351,13 +351,13 @@
   </div>
   <div id="hud"></div>
   <div id="status"></div>
-
+<!--
   <div id="craft-select">
     <div class="head">Spacecraft</div>
     <button class="preset on" id="craft-sat">Satellite<small>bus + wings</small></button>
     <button class="preset" id="craft-hm">Hail Mary<small>3 tanks + point mass</small></button>
   </div>
-
+-->
   <div id="controls">
     <div class="pad">
       <div class="c"></div>
@@ -1303,7 +1303,8 @@ function buildUI() {
   });
   window.addEventListener('keyup', (e) => { if (map[e.key]) { held[map[e.key]] = false; e.preventDefault(); } });
 
-  // Spacecraft selector.
+  /* Spacecraft selector disabled: the HTML selector is commented out,
+     so keep the default first spacecraft only (Satellite).
   const satBtn = document.getElementById('craft-sat'), hmBtn = document.getElementById('craft-hm');
   function setCraft(style) {
     craftStyle = style;
@@ -1313,6 +1314,7 @@ function buildUI() {
   }
   satBtn.onclick = () => setCraft('sat');
   hmBtn.onclick = () => setCraft('hm');
+  */
 }
 
 function currentForce() {
