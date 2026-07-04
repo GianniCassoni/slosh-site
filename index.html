@@ -1666,7 +1666,7 @@ fetch('data/models.json')
   // Pointer nutrient field, as in the interactive MAP-Elites playground:
   // growth gets +gain*M*(1-A) (attract) or -gain*M*A (repel) around the
   // cursor. Feed mode drops a matter blob on click/tap instead.
-  const ATTRACT_GAIN = 0.4, REPEL_GAIN = 0.18, M_SIG = 10;
+  const ATTRACT_GAIN = 0.8, REPEL_GAIN = 0.45, M_SIG = 10;
   let mode = 'attract';          // 'attract' | 'repel' | 'feed' | null
   let pOver = false, pmy = 0, pmx = 0;
 
@@ -1781,6 +1781,19 @@ fetch('data/models.json')
 
   function mass() { let m = 0; for (let i = 0; i < A.length; i++) m += A[i]; return m; }
 
+  // Stasis detection: the multi-kernel rule has a static circular still-life
+  // attractor. Snapshot the field periodically; if it has stopped changing
+  // (organism frozen into a disk/ring), reseed a fresh glider.
+  const SNAP_EVERY = 200;
+  let snap = new Float32Array(GW * GH), snapValid = false;
+  function checkStasis() {
+    let diff = 0;
+    for (let i = 0; i < A.length; i++) diff += Math.abs(A[i] - snap[i]);
+    const frozen = snapValid && diff < 1.5;
+    snap.set(A); snapValid = true;
+    return frozen;
+  }
+
   function loop(now) {
     raf = 0;
     if (!visible) return;
@@ -1788,10 +1801,11 @@ fetch('data/models.json')
     acc += dt;
     while (acc >= DT) {
       step(); acc -= DT; steps++;
-      // Safety only: reseed if the organism actually died or blew up. It is
-      // self-sustaining and needs no feeding, so there is no periodic reset.
+      // Safety: reseed if the organism died, blew up, or froze into the
+      // static circular still-life this rule admits.
       const m = mass();
-      if (m < 3 || m > GW * GH * 0.5) { seed(); steps = 0; }
+      if (m < 3 || m > GW * GH * 0.5) { seed(); steps = 0; snapValid = false; }
+      else if (steps % SNAP_EVERY === 0 && checkStasis()) { seed(); steps = 0; snapValid = false; }
     }
     draw();
     raf = requestAnimationFrame(loop);
