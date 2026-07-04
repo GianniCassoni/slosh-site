@@ -591,6 +591,7 @@
           <button id="lenia-attract" class="on">Attract</button>
           <button id="lenia-repel">Repel</button>
           <button id="lenia-feed">Feed</button>
+          <button id="lenia-reset">Reset</button>
         </div>
       </div>
       <div class="cap"><b>A live multi-kernel Lenia organism.</b> A continuous-space cellular automaton
@@ -961,14 +962,16 @@ function buildCraft(preset) {
     const c = craft.children[i];
     if (c.userData.keepFluid) continue;
     craft.remove(c);
-    c.geometry?.dispose();
-    c.material?.dispose?.();
+    if (!c.userData.noDispose) { c.geometry?.dispose(); c.material?.dispose?.(); }
   }
   if (craftStyle === 'hm') buildCraftHailMary(preset);
   else buildCraftSatellite(preset);
 }
 
 function buildCraftSatellite(preset) {
+  // Single centred tank: fluid mesh back at the origin.
+  if (fluidMesh) fluidMesh.position.set(0, 0, 0);
+  if (rimLine) rimLine.position.set(0, 0, 0);
   const zTop = preset.z_top_tank;
   const zCom = zTop + 0.34 * R;
   const zPanel = zTop + 0.60 * R;
@@ -1017,95 +1020,68 @@ function buildCraftSatellite(preset) {
   com.position.set(0, 0, zCom); craft.add(com);
 }
 
-// "Hail Mary" style ship: three parallel cylindrical tank hulls docked to a
-// central body, plus a long crossing solar-panel truss (see reference photo).
-// The centre tank is the live propellant tank; physics is unchanged.
+// "Hail Mary" configuration: three ACTIVE cylindrical propellant tanks at the
+// vertices of an equilateral triangle, plus a point-mass spacecraft body
+// offset perpendicular to the triangle plane (along z), tied in by struts.
+// All three tanks show the same live fluid solution (clones share geometry).
 function buildCraftHailMary(preset) {
   const zTop = preset.z_top_tank;
-  const hullR = 1.12 * R;
-  const hullZ0 = -0.6 * R, hullZ1 = zTop + 0.9 * R;
-  const hullLen = hullZ1 - hullZ0;
+  const L = 1.8 * R;   // triangle circumradius
+  const verts = [0, 1, 2].map(k => {
+    const a = Math.PI / 2 + k * (2 * Math.PI / 3);
+    return [L * Math.cos(a), L * Math.sin(a)];
+  });
 
-  function cyl(rTop, rBot, h, cz, color, opacity, open = true) {
-    const g = new THREE.CylinderGeometry(rTop, rBot, h, 48, 1, open);
-    g.rotateX(Math.PI / 2); g.translate(0, 0, cz);
-    const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
-      color, transparent: opacity < 1, opacity, side: THREE.DoubleSide,
-      roughness: 0.45, metalness: 0.25, depthWrite: opacity >= 1,
+  // Main fluid mesh sits at vertex 0; the other tanks get shared-geometry
+  // clones so they animate with the same modal solution for free.
+  fluidMesh.position.set(verts[0][0], verts[0][1], 0);
+  rimLine.position.set(verts[0][0], verts[0][1], 0);
+  for (let k = 1; k < 3; k++) {
+    const fClone = new THREE.Mesh(fluidMesh.geometry, fluidMesh.material);
+    fClone.position.set(verts[k][0], verts[k][1], 0);
+    fClone.renderOrder = 1;
+    fClone.userData.noDispose = true;
+    craft.add(fClone);
+    const rClone = new THREE.Line(rimLine.geometry, rimLine.material);
+    rClone.position.set(verts[k][0], verts[k][1], 0);
+    rClone.userData.noDispose = true;
+    craft.add(rClone);
+  }
+
+  // Bare cylindrical tanks: translucent wall + bottom disk, nothing else.
+  for (const [vx, vy] of verts) {
+    const wallGeo = new THREE.CylinderGeometry(R, R, zTop, 64, 1, true);
+    wallGeo.rotateX(Math.PI / 2); wallGeo.translate(0, 0, zTop / 2);
+    const wall = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({
+      color: 0xEAF1F8, transparent: true, opacity: 0.1, side: THREE.DoubleSide,
+      roughness: 0.2, metalness: 0.1, depthWrite: false,
     }));
-    if (opacity < 1) m.renderOrder = 3;
-    return m;
+    wall.renderOrder = 3; wall.position.set(vx, vy, 0); craft.add(wall);
+    const bot = new THREE.Mesh(new THREE.CircleGeometry(R, 64),
+      new THREE.MeshStandardMaterial({ color: 0x0D47A1, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
+    bot.renderOrder = 2; bot.position.set(vx, vy, 0); craft.add(bot);
   }
 
-  // Central body: stubby hub between the tanks, aft of the centre tank.
-  const hub = new THREE.Mesh(
-    new THREE.SphereGeometry(1.05 * R, 32, 20),
-    new THREE.MeshStandardMaterial({ color: 0xC7D2E2, roughness: 0.5, metalness: 0.3 }));
-  hub.scale.z = 0.75;
-  hub.position.z = hullZ0 - 0.55 * R;
-  craft.add(hub);
-  // Aft instrument boom out the back of the hub.
-  const boom = cyl(0.08 * R, 0.08 * R, 2.0 * R, hub.position.z - 1.3 * R, 0x9aa7bd, 1.0, false);
-  craft.add(boom);
-  const dish = new THREE.Mesh(new THREE.SphereGeometry(0.3 * R, 20, 12),
-    new THREE.MeshStandardMaterial({ color: 0xDCE4EE, roughness: 0.4 }));
-  dish.position.z = hub.position.z - 2.35 * R; craft.add(dish);
+  // Point-mass spacecraft body: perpendicular offset from the triangle
+  // centroid along +z, above the tank tops.
+  const zMass = zTop + 1.6 * R;
+  const pm = new THREE.Mesh(new THREE.SphereGeometry(0.34 * R, 24, 18),
+    new THREE.MeshStandardMaterial({ color: 0xf2f4f7, roughness: 0.35, metalness: 0.3 }));
+  pm.position.set(0, 0, zMass); craft.add(pm);
 
-  // Three parallel tank hulls: centre one is the live tank (glassy), the two
-  // outboard ones are sealed opaque hulls with nose caps.
-  const OFF = 2.05 * R;
-  for (const [ox, live] of [[0, true], [-OFF, false], [OFF, false]]) {
-    const shell = cyl(hullR, hullR, hullLen, 0.5 * (hullZ0 + hullZ1), 0xDCE4EE, live ? 0.07 : 0.85);
-    shell.position.x = ox; craft.add(shell);
-    // Nose cap (fore) + aft cap.
-    const nose = cyl(0.12 * R, hullR, 0.9 * R, hullZ1 + 0.45 * R, 0xC7D2E2, 1.0, false);
-    nose.position.x = ox; craft.add(nose);
-    const aft = cyl(hullR, 0.5 * hullR, 0.55 * R, hullZ0 - 0.27 * R, 0xB6C2D4, 1.0, false);
-    aft.position.x = ox; craft.add(aft);
-    // Docking strut to the hub.
-    if (ox !== 0) {
-      const strut = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(ox), 0.14 * R, 0.14 * R),
-        new THREE.MeshStandardMaterial({ color: 0x9aa7bd, roughness: 0.5 }));
-      strut.position.set(ox / 2, 0, hullZ0 - 0.35 * R);
-      craft.add(strut);
-    }
-    // Ring frames.
-    for (const fz of [hullZ0 + 0.22 * hullLen, hullZ0 + 0.72 * hullLen]) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(hullR, 0.028 * R, 8, 48),
-        new THREE.MeshStandardMaterial({ color: 0x9aa7bd, roughness: 0.5 }));
-      ring.position.set(ox, 0, fz); craft.add(ring);
-    }
+  // Struts: point mass -> each tank top rim, plus triangle edge ties.
+  const strutMat = new THREE.LineBasicMaterial({ color: 0x9aa7bd, transparent: true, opacity: 0.8 });
+  const pts = [];
+  for (const [vx, vy] of verts) {
+    pts.push(new THREE.Vector3(0, 0, zMass), new THREE.Vector3(vx, vy, zTop));
   }
-
-  // Long solar-panel truss crossing the central body (like the photo):
-  // segmented dark-blue panels running along y on both sides.
-  const segLen = 0.9 * R, segGap = 0.08 * R, nSeg = 6;
-  for (const sign of [1, -1]) {
-    for (let k = 0; k < nSeg; k++) {
-      const y = sign * (1.4 * R + segLen / 2 + k * (segLen + segGap));
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.9 * R, segLen, 0.04 * R),
-        new THREE.MeshStandardMaterial({ color: 0x1B3A8C, roughness: 0.35, metalness: 0.4 }));
-      panel.position.set(0, y, hub.position.z);
-      craft.add(panel);
-    }
-    // Truss rail.
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1 * R, nSeg * (segLen + segGap), 0.1 * R),
-      new THREE.MeshStandardMaterial({ color: 0x9aa7bd, roughness: 0.5 }));
-    rail.position.set(0, sign * (1.4 * R + nSeg * (segLen + segGap) / 2), hub.position.z);
-    craft.add(rail);
+  for (let k = 0; k < 3; k++) {
+    const [ax, ay] = verts[k], [bx, by] = verts[(k + 1) % 3];
+    pts.push(new THREE.Vector3(ax, ay, 0), new THREE.Vector3(bx, by, 0));
+    pts.push(new THREE.Vector3(ax, ay, zTop), new THREE.Vector3(bx, by, zTop));
   }
-
-  // Live tank internals: wall + bottom (fluid mesh sits at the origin).
-  const wallGeo = new THREE.CylinderGeometry(R, R, zTop, 64, 1, true);
-  wallGeo.rotateX(Math.PI / 2); wallGeo.translate(0, 0, zTop / 2);
-  const wallMesh = new THREE.Mesh(wallGeo, new THREE.MeshStandardMaterial({
-    color: 0xEAF1F8, transparent: true, opacity: 0.1, side: THREE.DoubleSide,
-    roughness: 0.2, metalness: 0.1, depthWrite: false,
-  }));
-  wallMesh.renderOrder = 3; craft.add(wallMesh);
-  const botMesh = new THREE.Mesh(new THREE.CircleGeometry(R, 64),
-    new THREE.MeshStandardMaterial({ color: 0x0D47A1, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }));
-  botMesh.renderOrder = 2; craft.add(botMesh);
+  const struts = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), strutMat);
+  craft.add(struts);
 }
 
 function buildFluid() {
@@ -1778,6 +1754,8 @@ fetch('data/models.json')
     return b;
   });
   cvs.style.cursor = 'crosshair';
+  const resetBtn = document.getElementById('lenia-reset');
+  if (resetBtn) resetBtn.addEventListener('click', () => { seed(); steps = 0; snapValid = false; });
   cvs.style.touchAction = 'pan-y';   // taps feed it, page can still scroll
 
   // Colour ramp: page navy (empty) -> lighter blue -> orange -> beige.
