@@ -23,14 +23,20 @@
     --serif: "Instrument Serif", "Times New Roman", Georgia, serif;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { scroll-behavior: smooth; background: var(--bg); }
+  html { scroll-behavior: smooth; background: var(--bg); width: 100%; max-width: 100%; overflow-x: hidden; }
   html, body {
-    margin: 0; overflow-x: hidden;
+    margin: 0; width: 100%; max-width: 100%; overflow-x: hidden;
     color: var(--text);
     font-family: var(--mono);
     -webkit-font-smoothing: antialiased;
   }
-  body { background: transparent; }
+  @supports (overflow: clip) { html, body { overflow-x: clip; } }
+  body { background: transparent; min-width: 0; position: relative; }
+  img, iframe, canvas, svg { max-width: 100%; }
+  #demo, #scene, #panel, #controls, #nav, #earth-bg, #grid-bg {
+    max-width: 100vw; max-width: 100dvw;
+  }
+  #scene canvas, #earth-bg canvas { display: block; width: 100% !important; max-width: 100%; }
   /* Faint technical grid behind the scrollable content (below the demo). */
   #grid-bg {
     position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0;
@@ -201,7 +207,7 @@
   @keyframes bob { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(5px); } }
 
   /* Scrollable content (CV / research / ads) */
-  main { position: relative; z-index: 1; max-width: 940px; margin: 0 auto; padding: 0 22px 96px; }
+  main { position: relative; z-index: 1; width: 100%; max-width: min(940px, 100%); margin: 0 auto; padding: 0 clamp(16px, 5vw, 22px) 96px; overflow-wrap: anywhere; }
   .eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 11px; color: var(--accent2); }
   .hero { padding: 96px 0 8px; text-align: center; }
   .hero h1 { font-family: var(--serif); font-weight: 400; margin: 10px 0 6px; font-size: clamp(46px, 9vw, 92px); line-height: .98; letter-spacing: .5px; }
@@ -323,9 +329,48 @@
     display: inline-flex; align-items: center; gap: 7px; text-decoration: none;
     color: var(--text); font-size: 14px; padding: 9px 14px; border-radius: 10px;
     border: 1px solid var(--panel-border); background: var(--panel);
+    max-width: 100%; min-width: 0; overflow-wrap: anywhere; word-break: break-word;
   }
   .contact a:hover { border-color: var(--accent); }
   footer.legal { margin-top: 40px; color: var(--muted); font-size: 11.5px; line-height: 1.6; text-align: center; }
+
+
+  /* Mobile width guard: prevent any control/card/navigation cluster from
+     expanding the layout wider than the physical viewport. */
+  @media (max-width: 560px) {
+    #nav { padding: 10px 12px; gap: 10px; }
+    #nav .brand { font-size: clamp(15px, 4.5vw, 18px); white-space: nowrap; }
+    #nav .links { gap: 10px; min-width: 0; }
+    #nav .links a { font-size: 10px; letter-spacing: 1px; }
+    #nav .links a[href="#publications"] { display: none; }
+
+    #panel { padding-left: 8px; padding-right: 8px; }
+    .row { gap: 5px; align-items: flex-start; }
+    .row .lab { width: 62px; flex-basis: 62px; font-size: 10px; letter-spacing: .35px; }
+    .btns { min-width: 0; gap: 5px; }
+    button.preset { min-width: 50px; padding: 7px 3px; font-size: 10px; }
+    button.preset small { font-size: 9px; }
+    .slider { min-width: 0; gap: 6px; }
+    .slider .val { width: 40px; font-size: 11px; }
+
+    #controls { left: 0; right: 0; width: auto; padding: 0 10px; }
+    .pad { grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(3, 42px); gap: 5px; }
+    .actions button { width: 42px; height: 42px; font-size: 11px; }
+
+    .hero h1 { font-size: clamp(40px, 15vw, 64px); }
+    .papers, .li-posts, .lenia-box { max-width: 100%; }
+    .lenia-ui { left: 8px; right: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .lenia-ui button { padding: 6px 9px; font-size: 10px; }
+  }
+  @media (max-width: 360px) {
+    #nav .links a[href="#demo"] { display: none; }
+    .row .lab { width: 56px; flex-basis: 56px; }
+    button.preset { min-width: 46px; }
+    #controls { padding: 0 8px; }
+    .pad { grid-template-columns: repeat(3, 38px); grid-template-rows: repeat(3, 38px); gap: 4px; }
+    .actions button { width: 38px; height: 38px; font-size: 10px; }
+  }
+
 </style>
 </head>
 <body>
@@ -878,9 +923,26 @@ function waterColor(t) {
 // Scene setup
 // ---------------------------------------------------------------------------
 const sceneEl = document.getElementById('scene');
+function layoutViewportSize() {
+  const de = document.documentElement;
+  const vv = window.visualViewport;
+  const w = Math.floor(Math.min(de.clientWidth || window.innerWidth, vv?.width || window.innerWidth));
+  const h = Math.floor(Math.min(window.innerHeight, vv?.height || window.innerHeight));
+  return { w: Math.max(1, w), h: Math.max(1, h) };
+}
+function sceneViewportSize() {
+  const vp = layoutViewportSize();
+  const r = sceneEl.getBoundingClientRect();
+  const w = Math.floor(Math.min(r.width || sceneEl.clientWidth || vp.w, vp.w));
+  const h = Math.floor(r.height || sceneEl.clientHeight || vp.h);
+  return { w: Math.max(1, w), h: Math.max(1, h) };
+}
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(sceneEl.clientWidth, sceneEl.clientHeight);
+{
+  const { w, h } = sceneViewportSize();
+  renderer.setSize(w, h, false);
+}
 sceneEl.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -905,7 +967,8 @@ scene.background = new THREE.Color(0x05060a);
   scene.add(stars);
 })();
 
-const camera = new THREE.PerspectiveCamera(42, sceneEl.clientWidth / sceneEl.clientHeight, 0.1, 200);
+const initialSceneSize = sceneViewportSize();
+const camera = new THREE.PerspectiveCamera(42, initialSceneSize.w / initialSceneSize.h, 0.1, 200);
 camera.up.set(0, 0, 1);
 camera.position.set(7.5, -10.5, 5.5);
 
@@ -1165,7 +1228,7 @@ const sim = new Simulator({ lateral_force_amp: 2, vertical_force_amp: 2, modal_z
 // stored 0.319 rad/s — while preserving the correct ratios across gravities.
 const TIME_SCALE = 13.3;
 let gi = 0, pi = 0, fi = 1;   // gravity / propellant / fill indices
-let timeSpeed = 1.0, paused = false;
+let timeSpeed = 4.0, paused = false;
 const held = { left: false, right: false, up: false, down: false, fwd: false, back: false };
 let lastWall = performance.now() / 1000;
 
@@ -1365,12 +1428,14 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-window.addEventListener('resize', () => {
-  const w = sceneEl.clientWidth, h = sceneEl.clientHeight;
+function resizeDemoRenderer() {
+  const { w, h } = sceneViewportSize();
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
-});
+  renderer.setSize(w, h, false);
+}
+window.addEventListener('resize', resizeDemoRenderer);
+window.visualViewport?.addEventListener('resize', resizeDemoRenderer);
 
 // ---------------------------------------------------------------------------
 // Background Earth — a wireframe globe that spins as you scroll (pantheon-style)
@@ -1379,11 +1444,12 @@ window.addEventListener('resize', () => {
   const host = document.getElementById('earth-bg');
   const r2 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   r2.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  r2.setSize(window.innerWidth, window.innerHeight);
+  const earthVp0 = layoutViewportSize();
+  r2.setSize(earthVp0.w, earthVp0.h, false);
   host.appendChild(r2.domElement);
 
   const s2 = new THREE.Scene();
-  const c2 = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 100);
+  const c2 = new THREE.PerspectiveCamera(38, earthVp0.w / earthVp0.h, 0.1, 100);
   c2.position.set(0, 0, 8);
 
   const globe = new THREE.Group();
@@ -1459,7 +1525,8 @@ window.addEventListener('resize', () => {
   });
 
   function layout() {
-    const wide = window.innerWidth > 760;
+    const { w } = layoutViewportSize();
+    const wide = w > 760;
     globe.position.set(wide ? 2.3 : 0, wide ? 0 : 0.6, 0);
     const s = wide ? 1 : 0.82;
     globe.scale.setScalar(s);
@@ -1487,12 +1554,15 @@ window.addEventListener('resize', () => {
   }
   tickEarth();
 
-  window.addEventListener('resize', () => {
-    c2.aspect = window.innerWidth / window.innerHeight;
+  function resizeEarthRenderer() {
+    const { w, h } = layoutViewportSize();
+    c2.aspect = w / h;
     c2.updateProjectionMatrix();
-    r2.setSize(window.innerWidth, window.innerHeight);
+    r2.setSize(w, h, false);
     layout();
-  });
+  }
+  window.addEventListener('resize', resizeEarthRenderer);
+  window.visualViewport?.addEventListener('resize', resizeEarthRenderer);
 })();
 
 // ---------------------------------------------------------------------------
