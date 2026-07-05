@@ -1165,7 +1165,7 @@ const sim = new Simulator({ lateral_force_amp: 2, vertical_force_amp: 2, modal_z
 // stored 0.319 rad/s — while preserving the correct ratios across gravities.
 const TIME_SCALE = 13.3;
 let gi = 0, pi = 0, fi = 1;   // gravity / propellant / fill indices
-let timeSpeed = 4.0, paused = false;
+let timeSpeed = 1.0, paused = false;
 const held = { left: false, right: false, up: false, down: false, fwd: false, back: false };
 let lastWall = performance.now() / 1000;
 
