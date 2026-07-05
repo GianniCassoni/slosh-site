@@ -393,7 +393,7 @@
     </div>
     <div class="row">
       <div class="lab">Time ×</div>
-      <div class="slider"><input id="speed" type="range" min="0.25" max="5" step="0.25" value="1" /><span class="val" id="speed-val">1.0×</span></div>
+      <div class="slider"><input id="speed" type="range" min="0.25" max="5" step="0.25" value="4" /><span class="val" id="speed-val">4.0×</span></div>
     </div>
   </div>
   <a id="scroll-cue" href="#about">▼ research &amp; publications</a>
@@ -1165,7 +1165,7 @@ const sim = new Simulator({ lateral_force_amp: 2, vertical_force_amp: 2, modal_z
 // stored 0.319 rad/s — while preserving the correct ratios across gravities.
 const TIME_SCALE = 13.3;
 let gi = 0, pi = 0, fi = 1;   // gravity / propellant / fill indices
-let timeSpeed = 1.0, paused = false;
+let timeSpeed = 4.0, paused = false;
 const held = { left: false, right: false, up: false, down: false, fwd: false, back: false };
 let lastWall = performance.now() / 1000;
 
@@ -1521,13 +1521,20 @@ fetch('data/models.json')
       const idx = (nR - 1) * nPhi + j;
       angLatY[j] = Math.sin(Math.atan2(Y0[idx], X0[idx]));
     }
-    // Pick a default preset that exists (prefer Micro-g so slosh is visible).
+    // Pick the requested default setup: Moon gravity + water propellant.
+    // Fall back gracefully if either label is absent in a regenerated dataset.
     fi = Math.min(1, data.fill.length - 1);
-    gi = data.gravity.findIndex((_, i) => available(i, 0, fi));
-    if (gi < 0) gi = 0;
-    // Prefer the Micro-g preset if available for a striking default.
-    const microIdx = data.gravity.findIndex((g) => /micro/i.test(g.name));
-    if (microIdx >= 0) { const g = microIdx, nf = pickFill(g, 0, fi); if (nf >= 0) { gi = g; fi = nf; } }
+    const waterIdx = data.propellant.findIndex((p) => /water/i.test(p.name));
+    pi = waterIdx >= 0 ? waterIdx : 0;
+
+    const moonIdx = data.gravity.findIndex((g) => /moon|lunar/i.test(g.name));
+    if (moonIdx >= 0) {
+      const nf = pickFill(moonIdx, pi, fi);
+      if (nf >= 0) { gi = moonIdx; fi = nf; }
+    } else {
+      gi = data.gravity.findIndex((_, i) => available(i, pi, fi));
+      if (gi < 0) gi = 0;
+    }
     buildUI();
     loadPreset();
     lastWall = performance.now() / 1000;
@@ -1677,8 +1684,7 @@ fetch('data/models.json')
   // Pointer nutrient field, as in the interactive MAP-Elites playground:
   // growth gets +gain*M*(1-A) (attract) or -gain*M*A (repel) around the
   // cursor. Feed mode drops a matter blob on click/tap instead.
-  const ATTRACT_GAIN = 0.22, REPEL_GAIN = 0.20, M_SIG = 8;
-  let mode = null;               // 'attract' | 'repel' | 'feed' | null
+  const ATTRACT_GAIN = 0.95, REPEL_GAIN = 0.86, M_SIG = 29;  let mode = null;               // 'attract' | 'repel' | 'feed' | null
   let pOver = false, pmy = 0, pmx = 0;
 
   function step() {
