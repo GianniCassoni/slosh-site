@@ -3,7 +3,58 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Gianni Cassoni — Microgravity Sloshing</title>
+
+<title>Gianni Cassoni | Spacecraft Dynamics &amp; Microgravity Sloshing</title>
+<meta name="description" content="Gianni Cassoni is a PhD researcher in spacecraft dynamics, microgravity propellant sloshing, reduced-order modelling, CFD–multibody coupling, and in-orbit refuelling." />
+<meta name="author" content="Gianni Cassoni" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<link rel="canonical" href="https://giannicassoni.com/" />
+
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/assets/favicon-32x32.png" sizes="32x32" type="image/png" />
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Gianni Cassoni" />
+<meta property="og:title" content="Gianni Cassoni | Spacecraft Dynamics &amp; Microgravity Sloshing" />
+<meta property="og:description" content="Research in spacecraft dynamics, microgravity propellant sloshing, reduced-order modelling, CFD–multibody coupling, and in-orbit refuelling." />
+<meta property="og:url" content="https://giannicassoni.com/" />
+<meta property="og:image" content="https://giannicassoni.com/assets/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Gianni Cassoni — spacecraft dynamics and microgravity sloshing research" />
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Gianni Cassoni | Spacecraft Dynamics &amp; Microgravity Sloshing" />
+<meta name="twitter:description" content="Research in spacecraft dynamics, microgravity propellant sloshing, reduced-order modelling, CFD–multibody coupling, and in-orbit refuelling." />
+<meta name="twitter:image" content="https://giannicassoni.com/assets/og-image.png" />
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Gianni Cassoni",
+  "url": "https://giannicassoni.com/",
+  "jobTitle": "PhD Candidate in Aeronautical Engineering",
+  "description": "Researcher in spacecraft dynamics, microgravity propellant sloshing, reduced-order modelling, CFD–multibody coupling, and in-orbit refuelling.",
+  "affiliation": [
+    {
+      "@type": "Organization",
+      "name": "Roma Tre University"
+    },
+    {
+      "@type": "Organization",
+      "name": "Thales Alenia Space"
+    }
+  ],
+  "sameAs": [
+    "https://www.linkedin.com/in/giannicassoni",
+    "https://github.com/GianniCassoni",
+    "https://www.researchgate.net/profile/Gianni-Cassoni",
+    "https://x.com/gianni_cassoni"
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
@@ -58,8 +109,24 @@
   }
   #nav a { pointer-events: auto; text-decoration: none; color: var(--text); }
   #nav .brand {
-    font-family: var(--serif); font-size: clamp(17px, 2.4vw, 22px);
+    font-family: var(--serif); font-size: clamp(15px, 2.1vw, 20px);
     letter-spacing: .5px; line-height: 1; text-transform: uppercase;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .brand-scroll-cue {
+    display: inline-block;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: .72em;
+    animation: brandCueBob 1.5s ease-in-out infinite;
+    transform-origin: center;
+  }
+  @keyframes brandCueBob {
+    0%, 100% { transform: translateY(-2px); opacity: .7; }
+    50% { transform: translateY(4px); opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .brand-scroll-cue { animation: none; }
   }
   #nav .links { display: flex; gap: clamp(12px, 2.4vw, 30px); align-items: center; }
   #nav .links a {
@@ -339,7 +406,7 @@
      expanding the layout wider than the physical viewport. */
   @media (max-width: 560px) {
     #nav { padding: 10px 12px; gap: 10px; }
-    #nav .brand { font-size: clamp(15px, 4.5vw, 18px); white-space: nowrap; }
+    #nav .brand { font-size: clamp(13px, 3.9vw, 17px); white-space: nowrap; }
     #nav .links { gap: 10px; min-width: 0; }
     #nav .links a { font-size: 10px; letter-spacing: 1px; }
     #nav .links a[href="#publications"] { display: none; }
@@ -458,12 +525,13 @@
 <div id="grid-bg"></div>
 
 <nav id="nav">
-  <a class="brand" href="#top">Gianni&nbsp;Cassoni</a>
+  <a class="brand" href="#research">
+    <span>Research &amp; Publications</span>
+    <span class="brand-scroll-cue" aria-hidden="true">↓&nbsp;SCROLL</span>
+  </a>
   <div class="links">
     <a href="#demo">Demo</a>
     <a class="hide-sm" href="#about">About</a>
-    <a class="hide-sm" href="#research">Research</a>
-    <a href="#publications">Publications</a>
     <a href="#contact">Contact</a>
   </div>
 </nav>
@@ -521,7 +589,6 @@
       <div class="slider"><input id="speed" type="range" min="0.25" max="5" step="0.25" value="4" /><span class="val" id="speed-val">4.0×</span></div>
     </div>
   </div>
-  <a id="scroll-cue" href="#about">▼ research &amp; publications</a>
 </section>
 
 <main>
@@ -1667,7 +1734,7 @@ window.visualViewport?.addEventListener('resize', resizeDemoRenderer);
 // ---------------------------------------------------------------------------
 // Boot
 // ---------------------------------------------------------------------------
-fetch('data/models.json')
+fetch('./data/models.json')
   .then((r) => { if (!r.ok) throw new Error('models.json not found'); return r.json(); })
   .then((data) => {
     DATA = data;
