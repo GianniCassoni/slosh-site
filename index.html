@@ -911,6 +911,18 @@ class Simulator {
     this.state = null;
     this.activeFx = 0;
     this.activeFz = 0;
+
+    // One combined out-of-plane mode for the two symmetric solar arrays.
+    // The frequency is specified in displayed physical time. The simulator
+    // itself advances in the dataset's capillary-time units.
+    this.panelFrequencyHz = 1.0;
+    this.panelTimeScale = 13.3;
+    this.panelZeta = 0.075;
+    this.panelModalMass = 0;
+    this.panelBodyProjection = 0;
+    this.panelOmega = 0;
+    this.panelStiffness = 0;
+    this.panelDamping = 0;
   }
 
   _prepSector(raw) {
@@ -951,9 +963,28 @@ class Simulator {
     this.dryMass = preset.dry_mass;
     this.nL = this.lateral.n;
     this.nV = this.vertical.n;
-    // state = [x, xdot, y, ydot, z, zdot, aLx, aLxdot, aLy, aLydot, aV, aVdot]
-    this.state = new Float64Array(6 + 4 * this.nL + 2 * this.nV);
-    this.t = 0; this.activeFx = 0; this.activeFy = 0; this.activeFz = 0;
+
+    // Effective properties of the two-array first bending mode. q is
+    // normalized as panel-tip displacement. The modal coordinate is coupled
+    // reciprocally to the spacecraft z translation in the same mass matrix.
+    this.panelModalMass = Math.max(0.035 * this.dryMass, 1.0);
+    this.panelBodyProjection = 1.35 * this.panelModalMass;
+    this.panelOmega =
+      2 * Math.PI * this.panelFrequencyHz / this.panelTimeScale;
+    this.panelStiffness =
+      this.panelModalMass * this.panelOmega * this.panelOmega;
+    this.panelDamping =
+      2 * this.panelZeta * this.panelOmega * this.panelModalMass;
+
+    // state = [x,xdot,y,ydot,z,zdot,
+    //          aLx,aLxdot,aLy,aLydot,aV,aVdot,qPanel,qPanelDot]
+    this.state = new Float64Array(
+      6 + 4 * this.nL + 2 * this.nV + 2
+    );
+    this.t = 0;
+    this.activeFx = 0;
+    this.activeFy = 0;
+    this.activeFz = 0;
   }
 
   setZeta(z) {
@@ -986,6 +1017,65 @@ class Simulator {
     return sol; // sol[0]=rigid acc, sol[1..]=modal ddot
   }
 
+  _verticalPanelAccel(
+    sector,
+    forceCmd,
+    modalState,
+    modalVel,
+    panelQ,
+    panelQDot
+  ) {
+    const n = sector.n;
+    const panelIndex = n + 1;
+    const m = n + 2;
+
+    // Monolithic generalized mass matrix:
+    //
+    // [ Mzz   p_f^T   p_p ] [ z_ddot ]   [ Fz              ]
+    // [ p_f    B_f     0  ] [ a_ddot ] = [ -K_f a - C_f ad ]
+    // [ p_p     0     m_p ] [ q_ddot ]   [ -k_p q - c_p qd ]
+    //
+    // The zero fluid-panel block is correct for relative coordinates on
+    // separate subsystems. Their reciprocal interaction is transmitted
+    // through the shared spacecraft acceleration z_ddot.
+    const block = new Float64Array(m * m);
+    block[0] = this.dryMass + sector.addedMass;
+
+    for (let j = 0; j < n; j++) {
+      const projection = sector.bodyProjection[j];
+      block[0 * m + (1 + j)] = projection;
+      block[(1 + j) * m + 0] = projection;
+
+      for (let k = 0; k < n; k++) {
+        block[(1 + j) * m + (1 + k)] =
+          sector.B[j * n + k];
+      }
+    }
+
+    block[0 * m + panelIndex] = this.panelBodyProjection;
+    block[panelIndex * m + 0] = this.panelBodyProjection;
+    block[panelIndex * m + panelIndex] = this.panelModalMass;
+
+    const rhs = new Float64Array(m);
+    rhs[0] = forceCmd;
+
+    for (let i = 0; i < n; i++) {
+      let restoring = 0;
+      for (let k = 0; k < n; k++) {
+        restoring +=
+          sector.K[i * n + k] * modalState[k] +
+          sector.modalDamping[i * n + k] * modalVel[k];
+      }
+      rhs[1 + i] = -restoring;
+    }
+
+    rhs[panelIndex] =
+      -this.panelStiffness * panelQ -
+      this.panelDamping * panelQDot;
+
+    return solveLinear(block, rhs, m);
+  }
+
   _rhs(state, Fx, Fy, Fz, out) {
     const nL = this.nL, nV = this.nV;
     const xVel = state[1], yVel = state[3], zVel = state[5];
@@ -995,11 +1085,24 @@ class Simulator {
     const aLatY = state.subarray(o, o + nL);           o += nL;
     const aLatYDot = state.subarray(o, o + nL);        o += nL;
     const aVert = state.subarray(o, o + nV);           o += nV;
-    const aVertDot = state.subarray(o, o + nV);
+    const aVertDot = state.subarray(o, o + nV);        o += nV;
+    const panelQ = state[o];
+    const panelQDot = state[o + 1];
 
-    const solL = this._sectorAccel(this.lateral, xVel, Fx, aLat, aLatDot);
-    const solY = this._sectorAccel(this.lateralY, yVel, Fy, aLatY, aLatYDot);
-    const solV = this._sectorAccel(this.vertical, zVel, Fz, aVert, aVertDot);
+    const solL = this._sectorAccel(
+      this.lateral, xVel, Fx, aLat, aLatDot
+    );
+    const solY = this._sectorAccel(
+      this.lateralY, yVel, Fy, aLatY, aLatYDot
+    );
+    const solV = this._verticalPanelAccel(
+      this.vertical,
+      Fz,
+      aVert,
+      aVertDot,
+      panelQ,
+      panelQDot
+    );
 
     out[0] = xVel; out[1] = solL[0];
     out[2] = yVel; out[3] = solY[0];
@@ -1011,6 +1114,10 @@ class Simulator {
     for (let i = 0; i < nL; i++) out[idx++] = solY[1 + i];
     for (let i = 0; i < nV; i++) out[idx++] = aVertDot[i];
     for (let i = 0; i < nV; i++) out[idx++] = solV[1 + i];
+
+    const panelIndex = nV + 1;
+    out[idx++] = panelQDot;
+    out[idx++] = solV[panelIndex];
   }
 
   advance(dt, Fx, Fy, Fz) {
@@ -1035,11 +1142,23 @@ class Simulator {
 
   splitForRender() {
     const nL = this.nL, nV = this.nV;
+    const panelOffset = 6 + 4 * nL + 2 * nV;
     return {
-      xShift: this.state[0], yShift: this.state[2], zShift: this.state[4],
+      xShift: this.state[0],
+      yShift: this.state[2],
+      zShift: this.state[4],
       aLat: this.state.subarray(6, 6 + nL),
       aLatY: this.state.subarray(6 + 2 * nL, 6 + 3 * nL),
-      aVert: this.state.subarray(6 + 4 * nL, 6 + 4 * nL + nV),
+      aVert: this.state.subarray(
+        6 + 4 * nL,
+        6 + 4 * nL + nV
+      ),
+      aVertDot: this.state.subarray(
+        6 + 4 * nL + nV,
+        6 + 4 * nL + 2 * nV
+      ),
+      panelQ: this.state[panelOffset],
+      panelQDot: this.state[panelOffset + 1],
     };
   }
 }
@@ -1163,6 +1282,189 @@ let curPreset = null, curZ0 = null;
 let gain = 4.0;
 let craftStyle = 'sat';   // 'sat' | 'hm'
 
+// The two solar arrays use one combined 1 Hz out-of-plane mode.
+// Its generalized coordinate is part of Simulator.state and is solved
+// monolithically with z translation and all vertical fluid modes.
+const flexiblePanels = [];
+
+function panelModeShape(s) {
+  // Smooth clamped-root / free-tip approximation, normalized to phi(1)=1.
+  s = Math.min(1, Math.max(0, s));
+  return s * s * (3 - 2 * s);
+}
+
+function updateFlexiblePanels(render) {
+  const tip =
+    render && Number.isFinite(render.panelQ)
+      ? render.panelQ
+      : 0;
+  for (const panel of flexiblePanels) {
+    const pos = panel.geometry.attributes.position;
+    const base = panel.userData.basePositions;
+    const span = panel.userData.spanCoordinates;
+    for (let i = 0; i < pos.count; i++) {
+      pos.setX(i, base[i * 3]);
+      pos.setY(i, base[i * 3 + 1]);
+      pos.setZ(i, base[i * 3 + 2] + tip * panelModeShape(span[i]));
+    }
+    pos.needsUpdate = true;
+    panel.geometry.computeVertexNormals();
+    panel.geometry.computeBoundingSphere();
+  }
+}
+
+
+let solarCellTexture = null;
+
+function getSolarCellTexture() {
+  if (solarCellTexture) return solarCellTexture;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  // Deep-blue photovoltaic laminate with a slight vertical illumination gradient.
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, '#244fa4');
+  gradient.addColorStop(0.48, '#173b86');
+  gradient.addColorStop(1, '#102760');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Outer aluminium frame painted directly into the UV texture so it follows
+  // the flexible geometry without creating detached rigid rails.
+  const border = 20;
+  ctx.fillStyle = '#9aa8ba';
+  ctx.fillRect(0, 0, canvas.width, border);
+  ctx.fillRect(0, canvas.height - border, canvas.width, border);
+  ctx.fillRect(0, 0, border, canvas.height);
+  ctx.fillRect(canvas.width - border, 0, border, canvas.height);
+
+  // Solar-cell layout: 12 spanwise columns x 6 chordwise rows.
+  const cols = 12;
+  const rows = 6;
+  const x0 = border + 10;
+  const y0 = border + 10;
+  const usableW = canvas.width - 2 * (border + 10);
+  const usableH = canvas.height - 2 * (border + 10);
+  const cw = usableW / cols;
+  const ch = usableH / rows;
+
+  for (let c = 0; c < cols; c++) {
+    for (let r = 0; r < rows; r++) {
+      const x = x0 + c * cw;
+      const y = y0 + r * ch;
+
+      const cellGradient = ctx.createLinearGradient(x, y, x + cw, y + ch);
+      cellGradient.addColorStop(0, 'rgba(80,135,220,0.42)');
+      cellGradient.addColorStop(0.45, 'rgba(18,55,132,0.18)');
+      cellGradient.addColorStop(1, 'rgba(4,18,65,0.38)');
+      ctx.fillStyle = cellGradient;
+      ctx.fillRect(x + 3, y + 3, cw - 6, ch - 6);
+
+      ctx.strokeStyle = 'rgba(154,190,245,0.46)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 3, y + 3, cw - 6, ch - 6);
+
+      // Fine silver collection fingers.
+      ctx.strokeStyle = 'rgba(215,228,242,0.24)';
+      ctx.lineWidth = 1;
+      for (let k = 1; k < 5; k++) {
+        const fx = x + 3 + (cw - 6) * k / 5;
+        ctx.beginPath();
+        ctx.moveTo(fx, y + 5);
+        ctx.lineTo(fx, y + ch - 5);
+        ctx.stroke();
+      }
+
+      // Two brighter bus bars per cell.
+      ctx.strokeStyle = 'rgba(225,235,247,0.38)';
+      ctx.lineWidth = 2;
+      for (const frac of [0.34, 0.66]) {
+        const bx = x + 3 + (cw - 6) * frac;
+        ctx.beginPath();
+        ctx.moveTo(bx, y + 4);
+        ctx.lineTo(bx, y + ch - 4);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Subtle diagonal specular streak.
+  const shine = ctx.createLinearGradient(0, canvas.height, canvas.width, 0);
+  shine.addColorStop(0.25, 'rgba(255,255,255,0)');
+  shine.addColorStop(0.5, 'rgba(255,255,255,0.10)');
+  shine.addColorStop(0.62, 'rgba(255,255,255,0)');
+  ctx.fillStyle = shine;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  solarCellTexture = new THREE.CanvasTexture(canvas);
+  solarCellTexture.colorSpace = THREE.SRGBColorSpace;
+  solarCellTexture.wrapS = THREE.ClampToEdgeWrapping;
+  solarCellTexture.wrapT = THREE.ClampToEdgeWrapping;
+  solarCellTexture.anisotropy = Math.min(
+    8,
+    renderer.capabilities.getMaxAnisotropy()
+  );
+  return solarCellTexture;
+}
+
+function createSolarPanel(sign, yPanel, zPanel, panelChord, panelHalf) {
+  const xSegments = 8;
+  const spanSegments = 18;
+  const geo = new THREE.PlaneGeometry(panelChord, 2 * panelHalf, xSegments, spanSegments);
+  const pos = geo.attributes.position;
+  const base = new Float32Array(pos.array);
+  const span = new Float32Array(pos.count);
+
+  for (let i = 0; i < pos.count; i++) {
+    const localY = base[i * 3 + 1];
+    // Positive array is rooted at local -Y; negative array at local +Y.
+    span[i] = sign > 0
+      ? (localY + panelHalf) / (2 * panelHalf)
+      : (panelHalf - localY) / (2 * panelHalf);
+  }
+
+  const mat = new THREE.MeshPhysicalMaterial({
+    map: getSolarCellTexture(),
+    color: 0xffffff,
+    side: THREE.DoubleSide,
+    roughness: 0.36,
+    metalness: 0.12,
+    clearcoat: 0.42,
+    clearcoatRoughness: 0.30,
+    sheen: 0.18,
+    sheenColor: new THREE.Color(0x8fb9ff),
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(0, yPanel, zPanel);
+  mesh.userData.basePositions = base;
+  mesh.userData.spanCoordinates = span;
+
+  // Reuse the same deforming geometry for a light wireframe overlay.
+  // Rebuilding EdgesGeometry every animation frame caused flicker and garbage
+  // collection stalls in the previous implementation.
+  mat.polygonOffset = true;
+  mat.polygonOffsetFactor = 1;
+  mat.polygonOffsetUnits = 1;
+
+  const wire = new THREE.Mesh(
+    geo,
+    new THREE.MeshBasicMaterial({
+      color: 0xb8c7df,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.075,
+      depthWrite: false,
+    })
+  );
+  wire.renderOrder = 4;
+  mesh.add(wire);
+  flexiblePanels.push(mesh);
+  return mesh;
+}
+
 function boxMesh(cx, cy, cz, sx, sy, sz, color, opacity, edge, opts = {}) {
   const geo = new THREE.BoxGeometry(sx, sy, sz);
   const transparent = opacity < 1;
@@ -1187,6 +1489,7 @@ function boxMesh(cx, cy, cz, sx, sy, sz, color, opacity, edge, opts = {}) {
 
 function buildCraft(preset) {
   // Clear previous static meshes (keep fluid group children rebuilt separately).
+  flexiblePanels.length = 0;
   for (let i = craft.children.length - 1; i >= 0; i--) {
     const c = craft.children[i];
     if (c.userData.keepFluid) continue;
@@ -1214,13 +1517,44 @@ function buildCraftSatellite(preset) {
   craft.add(boxMesh(0, 0, 0.5 * (busZ0 + busZ1), 2 * busHalf, 2 * busHalf, busZ1 - busZ0,
     0xDCE4EE, 0.07, 0xAEC0D8, { side: THREE.BackSide, edgeOpacity: 0.7 }));
 
-  // Solar panels + booms (opaque, off to the sides so they don't occlude).
+  // Solar panels + booms. Each array carries one normalized out-of-plane
+  // bending mode; rigid mode simply sets the modal amplitude to zero.
   for (const sign of [1, -1]) {
     const yPanel = sign * (busHalf + boomSpan + panelHalf);
-    craft.add(boxMesh(0, yPanel, zPanel, panelChord, 2 * panelHalf, panelThick, 0x1B3A8C, 1.0, 0x6E86C8));
+    craft.add(createSolarPanel(sign, yPanel, zPanel, panelChord, panelHalf));
+
     const yBoom = sign * (busHalf + 0.5 * boomSpan);
-    craft.add(boxMesh(0, yBoom, zPanel, 0.18 * R, boomSpan, 0.08 * R, 0x9aa7bd, 1.0, null));
+    craft.add(boxMesh(
+      0, yBoom, zPanel,
+      0.18 * R, boomSpan, 0.075 * R,
+      0xaeb9c8, 1.0, 0x677588
+    ));
+
+    // Root hinge and deployment yoke.
+    const hingeGeo = new THREE.CylinderGeometry(0.095 * R, 0.095 * R, 0.24 * R, 24);
+    const hingeMat = new THREE.MeshStandardMaterial({
+      color: 0xc1cad5,
+      metalness: 0.72,
+      roughness: 0.28,
+    });
+    const hinge = new THREE.Mesh(hingeGeo, hingeMat);
+    hinge.rotation.z = Math.PI / 2;
+    hinge.position.set(0, sign * (busHalf + 0.05 * R), zPanel);
+    craft.add(hinge);
+
+    craft.add(boxMesh(
+      0,
+      sign * (busHalf + 0.18 * R),
+      zPanel,
+      0.32 * R,
+      0.22 * R,
+      0.10 * R,
+      0x7f8ea2,
+      1.0,
+      0xc8d0da
+    ));
   }
+  updateFlexiblePanels(sim ? sim.splitForRender() : null);
 
   // Tank wall (open translucent cylinder, axis along z). No depth write and a
   // late render order so the water inside is always visible through it.
@@ -1509,7 +1843,10 @@ function buildUI() {
     document.getElementById('speed-val').textContent = timeSpeed.toFixed(1) + '×';
   };
 
-  document.getElementById('btn-reset').onclick = () => { sim.reset(); lastWall = performance.now() / 1000; };
+  document.getElementById('btn-reset').onclick = () => {
+    sim.reset();
+    lastWall = performance.now() / 1000;
+  };
   const pauseBtn = document.getElementById('btn-pause');
   pauseBtn.onclick = () => { paused = !paused; pauseBtn.textContent = paused ? 'Play' : 'Pause'; lastWall = performance.now() / 1000; };
 
@@ -1567,6 +1904,8 @@ function updateHUD(render, fx, fy, fz) {
     `Bo = <b>${curPreset ? curPreset.bo.toFixed(curPreset.bo < 1 ? 2 : 0) : '–'}</b>&nbsp; ` +
     `f₁ = <b>${f1 >= 0.05 ? f1.toFixed(2) + ' Hz' : (1 / f1).toFixed(0) + ' s'}</b><br>` +
     `x/R = <b>${(render.xShift / R).toFixed(2)}</b>&nbsp; y/R = <b>${(render.yShift / R).toFixed(2)}</b>&nbsp; z/R = <b>${(render.zShift / R).toFixed(2)}</b><br>` +
+    `array = <b>flexible · 1 Hz</b>&nbsp; tip z/R = <b>${(render.panelQ / R).toFixed(3)}</b><br>` +
+    `coupling = <b>monolithic fluid ↔ body ↔ array</b><br>` +
     `Fx = <b>${fx.toFixed(0)} N</b>&nbsp; Fy = <b>${fy.toFixed(0)} N</b>&nbsp; Fz = <b>${fz.toFixed(0)} N</b>` +
     (paused ? '<br><b style="color:#ec7a2c">PAUSED</b>' : '');
 }
@@ -1587,6 +1926,7 @@ function animate() {
 
   const render = sim.splitForRender();
   updateFluid(render);
+  updateFlexiblePanels(render);
   craft.position.set(render.xShift, render.yShift, render.zShift);
   updateHUD(render, paused ? 0 : fx, paused ? 0 : fy, paused ? 0 : fz);
 
