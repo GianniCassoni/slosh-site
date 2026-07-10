@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="88" fill="#232e6b"/>
+<path d="M405 132A194 194 0 1 0 391 392" fill="none" stroke="#ec7a2c" stroke-width="24" stroke-linecap="round"/>
+<circle cx="404" cy="132" r="21" fill="#ec7a2c"/>
+<text x="256" y="314" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="190" font-weight="700" fill="#f0ecde">GC</text>
+</svg>
