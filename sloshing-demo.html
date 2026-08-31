@@ -102,10 +102,8 @@
   #nav {
     position: fixed; top: 0; left: 0; right: 0; z-index: 30;
     display: flex; align-items: center; justify-content: space-between;
-    min-height: 48px;
     padding: 12px clamp(14px, 4vw, 34px);
-    border-bottom: 1px solid rgba(240,236,222,.16);
-    background: rgba(27,36,80,.96);
+    background: linear-gradient(180deg, rgba(35,46,107,.88) 0%, rgba(35,46,107,0) 100%);
     backdrop-filter: blur(3px);
     pointer-events: none;
   }
@@ -136,28 +134,12 @@
     color: var(--muted); transition: color .15s;
   }
   #nav .links a:hover { color: var(--text); }
-  #nav .nav-action {
-    pointer-events: auto;
-    appearance: none;
-    border: 0;
-    padding: 0;
-    background: transparent;
-    color: var(--muted);
-    font: inherit;
-    font-size: 11px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: color .15s;
-  }
-  #nav .nav-action:hover { color: var(--text); }
   @media (max-width: 620px) { #nav .links a.hide-sm { display: none; } }
 
   /* Scroll-driven Earth in the background of the scrollable content */
   #earth-bg {
     position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    opacity: 0; transition: opacity .18s linear;
-    overflow: hidden;
+    opacity: 0; transition: opacity .6s ease;
   }
 
   /* Boxed live Lenia "orbium" glider inside the Research interests section —
@@ -176,7 +158,7 @@
   }
   .lenia-ui button {
     padding: 6px 12px; border-radius: 9px; cursor: pointer;
-    border: 1px solid var(--panel-border); background: rgba(27,36,80,.64);
+    border: 1px solid var(--panel-border); background: rgba(27,36,80,.45);
     color: var(--text); font-size: 11px; line-height: 1.15;
     backdrop-filter: blur(2px); transition: all .12s;
   }
@@ -202,51 +184,7 @@
   .affil .aidaa img { height: 40px; }
 
   /* The interactive demo occupies the first screen; the page scrolls past it. */
-  #demo {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    height: calc(100vh - 72px);
-    height: calc(100dvh - 72px);
-    padding-top: 48px;
-    overflow: hidden;
-    background: #1b2450;
-  }
-  #docking-frame {
-    display: block;
-    width: 100%;
-    height: 100%;
-    max-width: none;
-    border: 0;
-    background: #1b2450;
-  }
-  #alt-demo {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    display: none;
-    background: #05060a;
-  }
-  #alt-demo.open { display: block; }
-  #alt-demo iframe { display: block; width: 100%; height: 100%; max-width: none; border: 0; }
-  #close-alt-demo {
-    position: absolute;
-    top: max(12px, env(safe-area-inset-top));
-    right: 14px;
-    z-index: 3;
-    border: 1px solid rgba(240, 236, 222, .55);
-    border-radius: 3px;
-    padding: 9px 12px;
-    background: rgba(27,36,80,.94);
-    color: var(--text);
-    font: 600 10px/1 var(--mono);
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-  @media (max-width: 620px) {
-    #nav .nav-action { font-size: 9px; letter-spacing: .8px; }
-  }
+  #demo { position: relative; z-index: 1; width: 100%; height: 100vh; height: 100dvh; overflow: hidden; }
   #scene { position: absolute; inset: 0; touch-action: none; }
   #title {
     position: absolute; top: 52px; left: 0; right: 0; padding: 8px 12px 4px;
@@ -336,40 +274,9 @@
   @keyframes bob { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(5px); } }
 
   /* Scrollable content (CV / research / ads) */
-  #page-transition {
-    position: relative;
-    z-index: 2;
-    height: clamp(130px, 19vh, 230px);
-    margin-top: -1px;
-    pointer-events: none;
-    background:
-      linear-gradient(180deg,
-        rgba(27,36,80,.82) 0%,
-        rgba(27,36,80,.72) 16%,
-        rgba(31,41,91,.50) 48%,
-        rgba(35,46,107,.22) 76%,
-        rgba(35,46,107,0) 100%);
-  }
-  #page-transition::before {
-    content: "RESEARCH / SCROLL";
-    position: absolute;
-    top: 22px; left: 50%;
-    transform: translateX(-50%);
-    color: rgba(240,236,222,.56);
-    font-size: 9px;
-    letter-spacing: 1.8px;
-    white-space: nowrap;
-  }
-  #page-transition::after {
-    content: "";
-    position: absolute;
-    left: 10%; right: 10%; bottom: 12%; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(236,122,44,.30), transparent);
-    box-shadow: 0 0 22px rgba(236,122,44,.10);
-  }
   main { position: relative; z-index: 1; width: 100%; max-width: min(940px, 100%); margin: 0 auto; padding: 0 clamp(16px, 5vw, 22px) 96px; overflow-wrap: anywhere; }
   .eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 11px; color: var(--accent2); }
-  .hero { padding: 48px 0 8px; text-align: center; }
+  .hero { padding: 96px 0 8px; text-align: center; }
   .hero h1 { font-family: var(--serif); font-weight: 400; margin: 10px 0 6px; font-size: clamp(46px, 9vw, 92px); line-height: .98; letter-spacing: .5px; }
   .hero .subtitle { color: var(--muted); font-size: clamp(14px, 2.6vw, 18px); margin: 0; }
   .hero .tagline { color: var(--text); font-size: 14.5px; line-height: 1.75; max-width: 640px; margin: 20px auto 0; }
@@ -410,7 +317,7 @@
   .li-nav {
     position: absolute; top: 50%; transform: translateY(-50%); z-index: 4;
     width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
-    border: 1px solid var(--panel-border); background: rgba(27,36,80,.88);
+    border: 1px solid var(--panel-border); background: rgba(27,36,80,.82);
     color: var(--text); font-size: 20px; line-height: 1; display: flex;
     align-items: center; justify-content: center; transition: border-color .15s, color .15s;
   }
@@ -555,7 +462,7 @@
   }
 
   @media (orientation: landscape) and (max-height: 560px) {
-    #demo { height: calc(100svh - 44px); height: calc(100dvh - 44px); }
+    #demo { height: 100svh; height: 100dvh; }
 
     #nav { padding: 7px 12px; }
     #nav .links a[href="#publications"] { display: none; }
@@ -623,28 +530,66 @@
     <span class="brand-scroll-cue" aria-hidden="true">▼&nbsp;SCROLL</span>
   </a>
   <div class="links">
-    <a href="#demo">Docking</a>
-    <button class="nav-action" id="open-alt-demo-nav" type="button">Slosh Lab</button>
+    <a href="#demo">Demo</a>
     <a class="hide-sm" href="#about">About</a>
     <a href="#contact">Contact</a>
   </div>
 </nav>
 
 <section id="demo">
-  <iframe
-    id="docking-frame"
-    src="./slosh-dock.html"
-    title="Interactive in-orbit refuelling docking simulator"
-    allow="fullscreen"
-  ></iframe>
+  <div id="scene"></div>
+  <div id="title">
+    <h1>Spacecraft rigid-body + gravity-capillarity slosh</h1>
+    <p>coupled reduced-order model in real time &middot; hold the thruster pads to perturb the tank</p>
+  </div>
+  <div id="hud"></div>
+  <div id="status"></div>
+<!--
+  <div id="craft-select">
+    <div class="head">Spacecraft</div>
+    <button class="preset on" id="craft-sat">Satellite<small>bus + wings</small></button>
+    <button class="preset" id="craft-hm">Hail Mary<small>3 tanks + point mass</small></button>
+  </div>
+-->
+  <div id="controls">
+    <div class="pad">
+      <div class="c"></div>
+      <button data-force="fwd" title="forward">▲</button>
+      <div class="c"></div>
+      <button data-force="left">◀</button>
+      <div class="c"></div>
+      <button data-force="right">▶</button>
+      <div class="c"></div>
+      <button data-force="back" title="backward">▼</button>
+      <div class="c"></div>
+    </div>
+    <div class="actions">
+      <button data-force="up" title="thrust up">Z+</button>
+      <button data-force="down" title="thrust down">Z−</button>
+      <button id="btn-reset">Reset</button>
+      <button id="btn-pause">Pause</button>
+    </div>
+  </div>
+
+  <div id="panel">
+    <div class="row">
+      <div class="lab">Gravity</div>
+      <div class="btns" id="gravity-btns"></div>
+    </div>
+    <div class="row">
+      <div class="lab">Propellant</div>
+      <div class="btns" id="propellant-btns"></div>
+    </div>
+    <div class="row">
+      <div class="lab">Fill h/R</div>
+      <div class="slider"><input id="fill" type="range" min="0" max="3" step="1" value="1" /><span class="val" id="fill-val">–</span></div>
+    </div>
+    <div class="row">
+      <div class="lab">Time ×</div>
+      <div class="slider"><input id="speed" type="range" min="0.25" max="5" step="0.25" value="4" /><span class="val" id="speed-val">4.0×</span></div>
+    </div>
+  </div>
 </section>
-
-<div id="alt-demo" role="dialog" aria-modal="true" aria-label="Capillary slosh laboratory">
-  <button id="close-alt-demo" type="button">Close Lab</button>
-  <iframe id="alt-demo-frame" title="Interactive capillary slosh laboratory"></iframe>
-</div>
-
-<div id="page-transition" aria-hidden="true"></div>
 
 <main>
   <header class="hero" id="top">
@@ -652,9 +597,10 @@
     <h1>Gianni Cassoni</h1>
     <p class="subtitle">Microgravity propellant sloshing &middot; in-orbit refuelling &amp; servicing</p>
     <p class="tagline">
-      The interactive model above couples six-degree-of-freedom spacecraft motion, propellant
-      dynamics and compliant capture in an in-orbit refuelling manoeuvre. The separate Slosh Lab
-      remains available on demand for exploring gravity level, propellant and fill-ratio effects.
+      The interactive model above is a coupled reduced-order simulation of spacecraft rigid-body
+      motion and capillary propellant sloshing. Drag to orbit the view and use the thruster pads to
+      perturb the tank across gravity levels (from Earth to capillary Bond numbers), propellants and
+      fill ratios &mdash; part of my PhD research on in-orbit refuelling and servicing.
     </p>
     <div class="cta">
       <a class="primary" href="mailto:gianni.cassoni@uniroma3.it">Contact me</a>
@@ -1242,7 +1188,6 @@ function waterColor(t) {
 // ---------------------------------------------------------------------------
 // Scene setup
 // ---------------------------------------------------------------------------
-if (document.getElementById('scene')) {
 const sceneEl = document.getElementById('scene');
 
 
@@ -2177,183 +2122,6 @@ fetch('./data/models.json')
     el.textContent = 'Could not load model data: ' + err.message +
       '  — run  MPLBACKEND=Agg python web/export_web_data.py  and serve this folder over http.';
   });
-}
-</script>
-
-<script>
-(function initDemoSwitcher() {
-  const overlay = document.getElementById('alt-demo');
-  const frame = document.getElementById('alt-demo-frame');
-  const openButtons = [
-    document.getElementById('open-alt-demo-nav')
-  ].filter(Boolean);
-  const closeButton = document.getElementById('close-alt-demo');
-
-  function openLab() {
-    if (!frame.getAttribute('src')) frame.src = './sloshing-demo.html#demo';
-    overlay.classList.add('open');
-    document.documentElement.style.overflow = 'hidden';
-    closeButton.focus();
-  }
-
-  function closeLab() {
-    overlay.classList.remove('open');
-    document.documentElement.style.overflow = '';
-  }
-
-  openButtons.forEach((button) => button.addEventListener('click', openLab));
-  closeButton.addEventListener('click', closeLab);
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && overlay.classList.contains('open')) closeLab();
-  });
-})();
-</script>
-
-<script type="module">
-import * as THREE from 'three';
-
-(function initOrbitalBackground() {
-  const host = document.getElementById('earth-bg');
-  const grid = document.getElementById('grid-bg');
-  if (!host) return;
-
-  function viewportSize() {
-    return {
-      width: Math.max(1, document.documentElement.clientWidth || window.innerWidth),
-      height: Math.max(1, window.visualViewport?.height || window.innerHeight)
-    };
-  }
-
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-  renderer.setClearColor(0x000000, 0);
-  host.appendChild(renderer.domElement);
-
-  const initial = viewportSize();
-  renderer.setSize(initial.width, initial.height, false);
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, initial.width / initial.height, 0.1, 100);
-  camera.position.set(0, 0, 8);
-
-  const globe = new THREE.Group();
-  globe.rotation.x = -0.35;
-  globe.rotation.z = 0.18;
-  scene.add(globe);
-
-  const spin = new THREE.Group();
-  globe.add(spin);
-  const radius = 2.6;
-
-  const core = new THREE.Mesh(
-    new THREE.SphereGeometry(radius * 0.985, 48, 32),
-    new THREE.MeshBasicMaterial({ color: 0x232e6b })
-  );
-  spin.add(core);
-
-  const gridSphere = new THREE.LineSegments(
-    new THREE.WireframeGeometry(new THREE.SphereGeometry(radius, 36, 24)),
-    new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.24 })
-  );
-  spin.add(gridSphere);
-
-  const rimPoints = [];
-  for (let i = 0; i <= 128; i++) {
-    const angle = i / 128 * Math.PI * 2;
-    rimPoints.push(new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, 0));
-  }
-  globe.add(new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(rimPoints),
-    new THREE.LineBasicMaterial({ color: 0xf0ecde, transparent: true, opacity: 0.5 })
-  ));
-
-  function createSatellite() {
-    const sat = new THREE.Group();
-    const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0xf0ecde });
-    const panelMaterial = new THREE.MeshBasicMaterial({ color: 0xec7a2c });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.22), bodyMaterial);
-    sat.add(body);
-    const panelGeometry = new THREE.BoxGeometry(0.44, 0.02, 0.14);
-    const left = new THREE.Mesh(panelGeometry, panelMaterial);
-    const right = new THREE.Mesh(panelGeometry, panelMaterial);
-    left.position.x = -0.32;
-    right.position.x = 0.32;
-    sat.add(left, right);
-    return sat;
-  }
-
-  const orbitData = [
-    { radius: radius + 0.7, tilt: 0.5, tiltZ: 0.2, speed: 0.35, phase: 0.0 },
-    { radius: radius + 1.2, tilt: -0.7, tiltZ: 0.6, speed: 0.24, phase: 2.1 },
-    { radius: radius + 1.9, tilt: 1.1, tiltZ: -0.4, speed: 0.17, phase: 4.0 }
-  ];
-  const satellites = orbitData.map((orbit) => {
-    const plane = new THREE.Group();
-    plane.rotation.x = orbit.tilt;
-    plane.rotation.z = orbit.tiltZ;
-    globe.add(plane);
-
-    const points = [];
-    for (let i = 0; i <= 96; i++) {
-      const angle = i / 96 * Math.PI * 2;
-      points.push(new THREE.Vector3(Math.cos(angle) * orbit.radius, Math.sin(angle) * orbit.radius, 0));
-    }
-    plane.add(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(points),
-      new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.18 })
-    ));
-
-    const model = createSatellite();
-    plane.add(model);
-    return { ...orbit, plane, model };
-  });
-
-  function layout() {
-    const { width } = viewportSize();
-    const desktop = width > 760;
-    globe.position.set(desktop ? 2.3 : 0, desktop ? 0 : 0.6, 0);
-    globe.scale.setScalar(desktop ? 1 : 0.82);
-  }
-
-  function resize() {
-    const { width, height } = viewportSize();
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    layout();
-  }
-  resize();
-  window.addEventListener('resize', resize, { passive: true });
-  window.visualViewport?.addEventListener('resize', resize, { passive: true });
-
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let currentSpin = 0;
-  function animate(time) {
-    requestAnimationFrame(animate);
-    const scroll = window.scrollY || 0;
-    const viewport = Math.max(1, window.innerHeight);
-    const reveal = THREE.MathUtils.smoothstep(scroll / viewport, 0.34, 0.82);
-    host.style.opacity = String(reveal);
-    if (grid) grid.style.opacity = String(reveal * 0.82);
-    if (reveal < .002) return;
-
-    const targetSpin = scroll * 0.0016;
-    currentSpin += (targetSpin - currentSpin) * 0.08;
-    spin.rotation.y = currentSpin + (reducedMotion ? 0 : time * 0.00003);
-
-    const orbitClock = scroll * 0.004 + (reducedMotion ? 0 : time * 0.00012);
-    satellites.forEach((satellite) => {
-      const angle = orbitClock * satellite.speed * 6 + satellite.phase;
-      satellite.model.position.set(
-        Math.cos(angle) * satellite.radius,
-        Math.sin(angle) * satellite.radius,
-        0
-      );
-      satellite.model.rotation.z = angle + Math.PI / 2;
-    });
-    renderer.render(scene, camera);
-  }
-  requestAnimationFrame(animate);
-})();
 </script>
 
 <script>
