@@ -554,9 +554,17 @@
   }
 
   @media (max-width: 620px) {
-    #demo { height: calc(100svh - 54px); height: calc(100dvh - 54px); }
-    #page-transition { height: clamp(112px, 16vh, 160px); }
-    #page-transition::before { top: 18px; font-size: 8px; letter-spacing: 1.45px; }
+    #demo,
+    #page-transition,
+    #nav .links a[href="#demo"] { display: none; }
+    .hero { padding-top: 88px; }
+  }
+
+  @media (pointer: coarse) and (max-height: 560px) {
+    #demo,
+    #page-transition,
+    #nav .links a[href="#demo"] { display: none; }
+    .hero { padding-top: 72px; }
   }
 
   @media (orientation: landscape) and (max-height: 560px) {
@@ -640,13 +648,31 @@
 <section id="demo">
   <iframe
     id="docking-frame"
-    src="./slosh-dock.html"
+    data-src="./slosh-dock.html"
     title="Interactive in-orbit refuelling docking simulator"
     loading="eager"
     fetchpriority="high"
     allow="fullscreen"
   ></iframe>
 </section>
+
+<script>
+// Keep the GPU-heavy docking simulator off phones, including landscape mode.
+// Desktop visitors still receive it as the primary, eagerly loaded experience.
+(() => {
+  const frame = document.getElementById('docking-frame');
+  const phone = matchMedia('(max-width: 620px), (pointer: coarse) and (max-height: 560px)');
+  const syncDockingFrame = () => {
+    if (phone.matches) {
+      frame.removeAttribute('src');
+    } else if (!frame.hasAttribute('src')) {
+      frame.src = frame.dataset.src;
+    }
+  };
+  syncDockingFrame();
+  phone.addEventListener?.('change', syncDockingFrame);
+})();
+</script>
 
 <!-- Optional Slosh Lab overlay retained for a future re-enable.
 <div id="alt-demo" role="dialog" aria-modal="true" aria-label="Capillary slosh laboratory">
@@ -663,7 +689,7 @@
     <h1>Gianni Cassoni</h1>
     <p class="subtitle">Microgravity propellant sloshing &middot; in-orbit refuelling &amp; servicing</p>
     <p class="tagline">
-      The interactive model above couples six-degree-of-freedom spacecraft motion, propellant
+      The interactive browser model couples six-degree-of-freedom spacecraft motion, propellant
       dynamics and compliant capture in an in-orbit refuelling manoeuvre, exposing the coupled
       rigid-body, fluid and contact response directly in the browser.
     </p>
@@ -2232,7 +2258,7 @@ import * as THREE from 'three';
   }
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth <= 760 ? 1.1 : 1.35));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth <= 760 ? 1.35 : 1.5));
   renderer.setClearColor(0x000000, 0);
   host.appendChild(renderer.domElement);
 
