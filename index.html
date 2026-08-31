@@ -188,15 +188,13 @@
   }
   .lenia-box .cap b { color: var(--text); font-weight: 500; }
 
-  /* Footer affiliation badges (AIDAA + Italian Builders). */
+  /* Footer affiliation badge. */
   .affil { display: flex; flex-wrap: wrap; justify-content: center; gap: 34px; margin-top: 28px; }
   .affil .item { display: flex; flex-direction: column; align-items: center; gap: 9px; max-width: 240px; }
   .affil .lab { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); line-height: 1.5; }
   .affil a { display: inline-flex; opacity: .9; transition: opacity .15s; }
   .affil a:hover { opacity: 1; }
   .affil img { width: auto; display: block; }
-  /* Italian Builders wordmark is white — shows directly on the dark bg. */
-  .affil .ib img { height: 24px; }
   /* AIDAA logo is dark navy — needs a light chip to stay legible. */
   .affil .aidaa a { background: #f0ecde; border-radius: 6px; padding: 8px 12px; }
   .affil .aidaa img { height: 40px; }
@@ -344,10 +342,10 @@
     pointer-events: none;
     background:
       linear-gradient(180deg,
-        rgba(27,36,80,.82) 0%,
-        rgba(27,36,80,.72) 16%,
-        rgba(31,41,91,.50) 48%,
-        rgba(35,46,107,.22) 76%,
+        rgba(27,36,80,.40) 0%,
+        rgba(27,36,80,.30) 16%,
+        rgba(31,41,91,.18) 48%,
+        rgba(35,46,107,.07) 76%,
         rgba(35,46,107,0) 100%);
   }
   #page-transition::before {
@@ -355,7 +353,7 @@
     position: absolute;
     top: 22px; left: 50%;
     transform: translateX(-50%);
-    color: rgba(240,236,222,.56);
+    color: rgba(240,236,222,.42);
     font-size: 9px;
     letter-spacing: 1.8px;
     white-space: nowrap;
@@ -554,6 +552,12 @@
     #nav .links a[href="#research"] { display: none; }
   }
 
+  @media (max-width: 620px) {
+    #demo { height: calc(100svh - 54px); height: calc(100dvh - 54px); }
+    #page-transition { height: clamp(112px, 16vh, 160px); }
+    #page-transition::before { top: 18px; font-size: 8px; letter-spacing: 1.45px; }
+  }
+
   @media (orientation: landscape) and (max-height: 560px) {
     #demo { height: calc(100svh - 44px); height: calc(100dvh - 44px); }
 
@@ -624,7 +628,9 @@
   </a>
   <div class="links">
     <a href="#demo">Docking</a>
+    <!-- Slosh Lab launcher intentionally hidden while the docking experience is primary.
     <button class="nav-action" id="open-alt-demo-nav" type="button">Slosh Lab</button>
+    -->
     <a class="hide-sm" href="#about">About</a>
     <a href="#contact">Contact</a>
   </div>
@@ -639,10 +645,12 @@
   ></iframe>
 </section>
 
+<!-- Optional Slosh Lab overlay retained for a future re-enable.
 <div id="alt-demo" role="dialog" aria-modal="true" aria-label="Capillary slosh laboratory">
   <button id="close-alt-demo" type="button">Close Lab</button>
   <iframe id="alt-demo-frame" title="Interactive capillary slosh laboratory"></iframe>
 </div>
+-->
 
 <div id="page-transition" aria-hidden="true"></div>
 
@@ -653,8 +661,8 @@
     <p class="subtitle">Microgravity propellant sloshing &middot; in-orbit refuelling &amp; servicing</p>
     <p class="tagline">
       The interactive model above couples six-degree-of-freedom spacecraft motion, propellant
-      dynamics and compliant capture in an in-orbit refuelling manoeuvre. The separate Slosh Lab
-      remains available on demand for exploring gravity level, propellant and fill-ratio effects.
+      dynamics and compliant capture in an in-orbit refuelling manoeuvre, exposing the coupled
+      rigid-body, fluid and contact response directly in the browser.
     </p>
     <div class="cta">
       <a class="primary" href="mailto:gianni.cassoni@uniroma3.it">Contact me</a>
@@ -889,12 +897,6 @@
           <span class="lab">Organizing Committee Member<br>A.I.D.A.A. &mdash; Italian Association of Aeronautics &amp; Astronautics</span>
           <a href="https://www.aidaa.it/" target="_blank" rel="noopener" aria-label="A.I.D.A.A.">
             <img src="https://www.aidaa.it/wp-content/uploads/2021/01/AIDAA_logo_contorno.png" alt="A.I.D.A.A." />
-          </a>
-        </div>
-        <div class="item ib">
-          <span class="lab">Member of</span>
-          <a href="https://italianbuilders.co" target="_blank" rel="noopener" aria-label="Italian Builders">
-            <img src="https://italianbuilders.co/logo-vector.svg" alt="Italian Builders" />
           </a>
         </div>
       </div>
@@ -2180,6 +2182,7 @@ fetch('./data/models.json')
 }
 </script>
 
+<!-- Slosh Lab launcher intentionally disabled.
 <script>
 (function initDemoSwitcher() {
   const overlay = document.getElementById('alt-demo');
@@ -2208,6 +2211,7 @@ fetch('./data/models.json')
   });
 })();
 </script>
+-->
 
 <script type="module">
 import * as THREE from 'three';
@@ -2327,8 +2331,13 @@ import * as THREE from 'three';
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let currentSpin = 0;
+  let orbitalClock = 0;
+  let previousFrame = performance.now();
   function animate(time) {
     requestAnimationFrame(animate);
+    const frameDt = Math.min(Math.max((time - previousFrame) * .001, 0), .08);
+    previousFrame = time;
+    orbitalClock += frameDt * (reducedMotion ? .35 : 1);
     const scroll = window.scrollY || 0;
     const viewport = Math.max(1, window.innerHeight);
     const reveal = THREE.MathUtils.smoothstep(scroll / viewport, 0.34, 0.82);
@@ -2340,15 +2349,15 @@ import * as THREE from 'three';
     currentSpin += (targetSpin - currentSpin) * 0.08;
     spin.rotation.y = currentSpin + (reducedMotion ? 0 : time * 0.00003);
 
-    const orbitClock = scroll * 0.004 + (reducedMotion ? 0 : time * 0.00012);
+    const scrollPhase = scroll * 0.0012;
     satellites.forEach((satellite) => {
-      const angle = orbitClock * satellite.speed * 6 + satellite.phase;
+      const angle = satellite.phase + orbitalClock * satellite.speed * .75 + scrollPhase * satellite.speed;
       satellite.model.position.set(
         Math.cos(angle) * satellite.radius,
         Math.sin(angle) * satellite.radius,
         0
       );
-      satellite.model.rotation.z = angle + Math.PI / 2;
+      satellite.model.rotation.set(0, 0, angle + Math.PI / 2);
     });
     renderer.render(scene, camera);
   }
