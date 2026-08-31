@@ -57,6 +57,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
   :root {
@@ -641,6 +642,8 @@
     id="docking-frame"
     src="./slosh-dock.html"
     title="Interactive in-orbit refuelling docking simulator"
+    loading="eager"
+    fetchpriority="high"
     allow="fullscreen"
   ></iframe>
 </section>
@@ -907,13 +910,13 @@
 <script type="importmap">
 {
   "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
   }
 }
 </script>
 
-<script type="module">
+<script type="text/plain" data-disabled="legacy-slosh-simulator">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -2229,7 +2232,7 @@ import * as THREE from 'three';
   }
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, window.innerWidth <= 760 ? 1.1 : 1.35));
   renderer.setClearColor(0x000000, 0);
   host.appendChild(renderer.domElement);
 
@@ -2333,6 +2336,7 @@ import * as THREE from 'three';
   let currentSpin = 0;
   let orbitalClock = 0;
   let previousFrame = performance.now();
+  let previousRender = 0;
   function animate(time) {
     requestAnimationFrame(animate);
     const frameDt = Math.min(Math.max((time - previousFrame) * .001, 0), .08);
@@ -2344,6 +2348,8 @@ import * as THREE from 'three';
     host.style.opacity = String(reveal);
     if (grid) grid.style.opacity = String(reveal * 0.82);
     if (reveal < .002) return;
+    if (time - previousRender < 32) return;
+    previousRender = time;
 
     const targetSpin = scroll * 0.0016;
     currentSpin += (targetSpin - currentSpin) * 0.08;
