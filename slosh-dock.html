@@ -125,7 +125,7 @@ const interfaceMat=new THREE.LineBasicMaterial({color:0x9cecff,transparent:true,
 
 const plumeMat=new THREE.MeshBasicMaterial({color:0xb8e7f0,transparent:true,opacity:.6,depthWrite:false}),plumes={};function addPlume(name,pos,dir){const mesh=new THREE.Mesh(new THREE.ConeGeometry(.035,.44,12,1,true),plumeMat.clone());mesh.position.copy(pos);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());mesh.visible=false;craft.add(mesh);plumes[name]=mesh}
 addPlume("R+",new THREE.Vector3(-.9,0,.5),new THREE.Vector3(-1,0,0));addPlume("R-",new THREE.Vector3(.9,0,.5),new THREE.Vector3(1,0,0));addPlume("N+",new THREE.Vector3(0,-.9,.5),new THREE.Vector3(0,-1,0));addPlume("N-",new THREE.Vector3(0,.9,.5),new THREE.Vector3(0,1,0));addPlume("V-",new THREE.Vector3(0,0,1.5),new THREE.Vector3(0,0,1));addPlume("V+",new THREE.Vector3(0,0,-1.2),new THREE.Vector3(0,0,-1));
-const pathLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3()]),new THREE.LineBasicMaterial({color:0x7cc9dc,transparent:true,opacity:.52}));scene.add(pathLine);let path=[],pathDirty=false;
+const pathLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3()]),new THREE.LineBasicMaterial({color:0x7cc9dc,transparent:true,opacity:.52}));let path=[],pathDirty=false;
 
 const forceArrows={
  rcs:new THREE.ArrowHelper(new THREE.Vector3(0,1,0),new THREE.Vector3(),.5,0xec7a2c,.13,.065),
