@@ -653,6 +653,27 @@
   ></iframe>
 </section>
 
+<script>
+// Suspend the simulator when it is mostly outside the viewport so the orbital
+// background receives the full mobile rendering budget.
+(() => {
+  const section = document.getElementById('demo');
+  const frame = document.getElementById('docking-frame');
+  if (!section || !frame) return;
+  let sectionVisible = true;
+  const notify = () => frame.contentWindow?.postMessage({
+    type: 'docking-visibility',
+    visible: sectionVisible && !document.hidden
+  }, location.origin);
+  new IntersectionObserver(([entry]) => {
+    sectionVisible = entry.isIntersecting && entry.intersectionRatio > 0.25;
+    notify();
+  }, { threshold: [0, 0.25] }).observe(section);
+  frame.addEventListener('load', notify);
+  document.addEventListener('visibilitychange', notify);
+})();
+</script>
+
 <!-- Optional Slosh Lab overlay retained for a future re-enable.
 <div id="alt-demo" role="dialog" aria-modal="true" aria-label="Capillary slosh laboratory">
   <button id="close-alt-demo" type="button">Close Lab</button>
@@ -2341,7 +2362,6 @@ import * as THREE from 'three';
   let currentSpin = 0;
   let orbitalClock = 0;
   let previousFrame = performance.now();
-  let previousRender = 0;
   function animate(time) {
     requestAnimationFrame(animate);
     const frameDt = Math.min(Math.max((time - previousFrame) * .001, 0), .08);
@@ -2353,8 +2373,6 @@ import * as THREE from 'three';
     host.style.opacity = String(reveal);
     if (grid) grid.style.opacity = String(reveal * 0.82);
     if (reveal < .002) return;
-    if (time - previousRender < 32) return;
-    previousRender = time;
 
     const targetSpin = scroll * 0.0016;
     currentSpin += (targetSpin - currentSpin) * 0.08;
