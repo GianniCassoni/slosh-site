@@ -6,8 +6,11 @@ export function createEarthEnvironment(THREE, scene, ready=()=>{}, maxAnisotropy
  const mobile=matchMedia('(max-width: 820px)').matches;
  const fallback=new THREE.DataTexture(new Uint8Array([12,35,64,255]),1,1);
  fallback.needsUpdate=true;
- const lat=47*Math.PI/180,lon=12*Math.PI/180;
- const mapRotation=new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,.78,.63).normalize(),new THREE.Vector3(Math.cos(lat)*Math.cos(lon),Math.sin(lat),Math.cos(lat)*Math.sin(lon)))));
+ // Sub-spacecraft reference over the central Mediterranean, south of Sicily.
+ const lat=35.5*Math.PI/180,lon=16*Math.PI/180;
+ // Right-handed geographic frame: east × north points outward.
+ // With north along +Y, east at zero longitude must point along -Z.
+ const mapRotation=new THREE.Matrix3().setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,.78,.63).normalize(),new THREE.Vector3(Math.cos(lat)*Math.cos(lon),Math.sin(lat),-Math.cos(lat)*Math.sin(lon)))));
  const material=new THREE.ShaderMaterial({
   uniforms:{earthMap:{value:fallback},detailMap:{value:fallback},detailReady:{value:0},mapRotation:{value:mapRotation},sunDirection:{value:new THREE.Vector3(...SUN_DIRECTION).normalize()}},
   side:THREE.BackSide,depthWrite:false,depthTest:false,
@@ -28,9 +31,9 @@ export function createEarthEnvironment(THREE, scene, ready=()=>{}, maxAnisotropy
     if(disc>0.&&b>0.){
      vec3 hit=ray*(b-sqrt(disc)),n=normalize(hit-centre);
      vec3 geographic=mapRotation*n;
-     vec2 uv=vec2(fract(atan(geographic.z,geographic.x)/6.28318530718+.5),asin(clamp(geographic.y,-1.,1.))/3.14159265359+.5);
+     vec2 uv=vec2(fract(atan(-geographic.z,geographic.x)/6.28318530718+.5),asin(clamp(geographic.y,-1.,1.))/3.14159265359+.5);
      vec3 surface=texture2D(earthMap,uv).rgb;
-     vec2 detailUV=(uv-vec2(160./360.,120./180.))/vec2(60./360.,35./180.);
+     vec2 detailUV=(uv-vec2(168./360.,110./180.))/vec2(60./360.,35./180.);
      if(detailReady>.5&&all(greaterThan(detailUV,vec2(0.)))&&all(lessThan(detailUV,vec2(1.)))){
       vec2 edge=min(detailUV,1.-detailUV);
       float blend=smoothstep(0.,.035,min(edge.x,edge.y));
@@ -50,6 +53,16 @@ export function createEarthEnvironment(THREE, scene, ready=()=>{}, maxAnisotropy
      if(b>0.)color+=vec3(.08,.25,.58)*exp(-max(miss,0.)/.65)*.65;
      float star=hash(floor(ray*1800.));
      if(star>.99965)color+=vec3(.45,.52,.64)*pow((star-.99965)/.00035,5.);
+     // Sun at infinity, sharing the spacecraft light direction. Approx. 0.53° diameter.
+     // Integrated into this background pass: no sprite, texture or bloom render pass.
+     float alignment=dot(ray,sun);
+     if(alignment>.995){
+      float angle=length(cross(ray,sun));
+      float edge=max(fwidth(angle),.00012);
+      float discSun=1.-smoothstep(.00465-edge,.00465+edge,angle);
+      float halo=exp(-angle*angle/.00016);
+      color+=vec3(1.,.94,.82)*(discSun*12.+halo*.28);
+     }
     }
     gl_FragColor=vec4(color,1.);
     #include <tonemapping_fragment>
@@ -65,7 +78,7 @@ export function createEarthEnvironment(THREE, scene, ready=()=>{}, maxAnisotropy
   texture.wrapS=THREE.RepeatWrapping;texture.anisotropy=maxAnisotropy;
   material.uniforms.earthMap.value=texture;ready();
  },undefined,error=>{console.warn('Earth texture unavailable; using ocean fallback',error);ready();});
- new THREE.TextureLoader().load(mobile?'./assets/textures/europe-mobile.webp':'./assets/textures/europe-detail.webp',texture=>{
+ new THREE.TextureLoader().load(mobile?'./assets/textures/med-mobile.webp':'./assets/textures/med-detail.webp',texture=>{
   texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=maxAnisotropy;
   material.uniforms.detailMap.value=texture;material.uniforms.detailReady.value=1;
  },undefined,()=>{});

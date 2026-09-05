@@ -10,8 +10,8 @@
 <meta name="robots" content="index, follow, max-image-preview:large" />
 <link rel="canonical" href="https://giannicassoni.com/" />
 
-<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
-<link rel="icon" href="/assets/favicon-32x32.png" sizes="32x32" type="image/png" />
+<link rel="icon" href="/assets/favicon.svg?v=orbital" type="image/svg+xml" />
+<link rel="icon" href="/assets/favicon-32x32.png?v=orbital" sizes="32x32" type="image/png" />
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
 
 <meta property="og:type" content="website" />
@@ -623,6 +623,33 @@
     .row .lab { width: 68px; flex-basis: 68px; }
   }
 
+/* Research identity: lightweight, code-native mark and editorial layout. */
+#nav .brand{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:none;gap:12px}
+.brand-mark{width:42px;height:42px;flex:none;color:var(--accent)}
+.brand-name{display:grid;gap:5px}.brand-name small{font-size:8px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase}
+.brand-scroll-cue{font-size:9px;animation:none;margin-left:12px}
+#nav{background:rgba(20,28,62,.96)}
+main{max-width:1120px;padding-bottom:110px;background:transparent;border-top:1px solid rgba(240,236,222,.12)}
+.hero{text-align:left;padding:32px 0 64px;position:relative;scroll-margin-top:80px}
+.hero h1{font-size:clamp(54px,8vw,100px);letter-spacing:-.025em;margin:18px 0}
+.hero .subtitle{max-width:720px;line-height:1.5;color:var(--text)}
+.hero .tagline{margin:22px 0 0;max-width:650px;color:var(--muted);font-family:system-ui,sans-serif;font-size:18px;line-height:1.65}
+.cta{justify-content:flex-start;gap:8px;margin-top:28px}.cta a{font-size:10px;padding:12px 16px}
+.research-index{display:flex;gap:24px;flex-wrap:wrap;margin-top:38px;padding-top:20px;border-top:1px solid var(--panel-border)}
+.research-index a{color:var(--muted);text-decoration:none;font-size:10px;letter-spacing:.08em}.research-index a:hover{color:var(--accent)}
+.research-index span{color:var(--accent);margin-right:9px}
+section.block{padding:42px 0 44px;scroll-margin-top:90px}
+.block h2{font-size:clamp(32px,4vw,46px);margin:0 0 24px}
+.block p.lead{max-width:800px;font-family:system-ui,sans-serif;font-size:17px;line-height:1.8}
+.card{padding:25px;background:rgba(20,28,62,.68);border-radius:2px;border-color:rgba(240,236,222,.17);backdrop-filter:none}
+.card .role{margin-bottom:13px;font-size:10px}.card h3{line-height:1.5;font-size:15px}.card p{font-family:system-ui,sans-serif;font-size:15px;line-height:1.75}
+a.paper{background:rgba(20,28,62,.74);border-radius:2px;padding:24px;border-color:rgba(240,236,222,.18);box-shadow:none}
+ul.pubs{padding-left:0;list-style:none}ul.pubs li{padding:20px 0;margin:0;border-bottom:1px solid rgba(240,236,222,.12);font-family:system-ui,sans-serif;font-size:16px;line-height:1.75}
+ul.pubs .venue{color:var(--muted)}.subhead{margin-top:32px;font-size:10px}
+.contact{gap:10px}a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
+#page-transition{height:clamp(95px,14vh,160px)}
+@media(max-width:680px){#nav .brand{font-size:10px;gap:8px}.brand-mark{width:29px;height:29px}.brand-scroll-cue{display:none}.brand-name small{font-size:7px}.hero{padding:22px 0 40px}.hero .tagline{font-size:16px}.hero .subtitle{font-size:15px}.research-index{gap:16px}.card,a.paper{padding:19px}section.block{padding:30px 0}.block p.lead{font-size:16px}.cta a{padding:11px 12px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
 </style>
 </head>
 <body>
@@ -631,7 +658,8 @@
 
 <nav id="nav">
   <a class="brand" href="#research">
-    <span>Research &amp; Publications</span>
+    <img class="brand-mark" src="assets/favicon.svg" alt="" width="42" height="42" />
+    <span class="brand-name">GIANNI CASSONI<small>Spacecraft dynamics</small></span>
     <span class="brand-scroll-cue" aria-hidden="true">▼&nbsp;SCROLL</span>
   </a>
   <div class="links">
@@ -691,9 +719,8 @@
     <h1>Gianni Cassoni</h1>
     <p class="subtitle">Microgravity propellant sloshing &middot; in-orbit refuelling &amp; servicing</p>
     <p class="tagline">
-      The interactive model above couples six-degree-of-freedom spacecraft motion, propellant
-      dynamics and compliant capture in an in-orbit refuelling manoeuvre, exposing the coupled
-      rigid-body, fluid and contact response directly in the browser.
+      I study how liquid propellant changes spacecraft motion, and how to capture that
+      behaviour in models fast enough for mission simulations.
     </p>
     <div class="cta">
       <a class="primary" href="mailto:gianni.cassoni@uniroma3.it">Contact me</a>
@@ -703,6 +730,7 @@
       <a href="https://github.com/GianniCassoni" target="_blank" rel="noopener">GitHub</a>
       <a href="https://x.com/gianni_cassoni" target="_blank" rel="noopener">X</a>
     </div>
+    <div class="research-index" aria-label="Explore research"><a href="#research"><span>01</span>Research</a><a href="#publications"><span>02</span>Publications</a><a href="#about"><span>03</span>Background</a><a href="#contact"><span>04</span>Get in touch</a></div>
   </header>
 
   <section class="block" id="about">
@@ -735,9 +763,9 @@
     <p class="lead">
       <strong>Curvature-corrected sloshing spectra for microgravity.</strong> Classical slosh models
       assume a flat interface. In microgravity, surface tension dominates and the equilibrium meniscus
-      is strongly curved, shifting the natural frequencies and mode shapes. The demo above evaluates a
-      reduced-order model built from a Young&ndash;Laplace equilibrium and a modal eigen-solve, then
-      time-steps the coupled rigid-body + slosh dynamics live in your browser. Featured update on
+      can be strongly curved, shifting the natural frequencies and mode shapes. My research connects
+      these capillary dynamics to reduced-order models and coupled spacecraft simulations.
+      The browser demo offers an interactive illustration of the coupling, not a flight-qualified prediction. Featured update on
       <a href="https://www.linkedin.com/feed/update/urn:li:activity:7468333717594333184/" target="_blank" rel="noopener">LinkedIn</a>.
     </p>
 
@@ -814,7 +842,7 @@
           Diffeomorphism of the Zakharov&ndash;Craig&ndash;Sulem Formulation for Microgravity Applications.</em>
           <span class="venue">NODYCON 2026, Rome, Italy, Sep 20&ndash;23, 2026.</span></li>
       <li>Cassoni, G., Nerattini, A., Colella, A., Gennari, F., Serafini, J., &amp; Masarati, P. <em>On the CFD
-          Fidelity Requirements for Assessing Classical Slosh Models in On-Orbit Servicing Regimes.</em>
+          Fidelity Requirements for Assessing Classical Slosh Models in In-Orbit Servicing Regimes.</em>
           <span class="venue">ESA GNC &amp; ICATT, Seville, Spain, Sep 28&ndash;Oct 2, 2026.</span></li>
       <li>Cassoni, G., Madonna, D. P., Colella, A., Gennari, F., Serafini, J., &amp; Masarati, P.
           <em>Reduced-Order Modeling of Propellant Sloshing via Differential Variational Inequalities for

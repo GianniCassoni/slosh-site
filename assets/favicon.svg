@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<rect width="512" height="512" rx="88" fill="#232e6b"/>
-<path d="M405 132A194 194 0 1 0 391 392" fill="none" stroke="#ec7a2c" stroke-width="24" stroke-linecap="round"/>
-<circle cx="404" cy="132" r="21" fill="#ec7a2c"/>
-<text x="256" y="314" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="190" font-weight="700" fill="#f0ecde">GC</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+<path d="M28 10A14 14 0 1 0 30 28V21H21" stroke="#ec7a2c" stroke-width="2"/>
+<ellipse cx="20" cy="20" rx="19" ry="7" transform="rotate(-38 20 20)" stroke="#ec7a2c" stroke-width="1" opacity=".65"/>
+<circle cx="34" cy="9" r="2.5" fill="#ec7a2c"/>
 </svg>
