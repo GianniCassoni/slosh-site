@@ -58,10 +58,9 @@ export function createEarthEnvironment(THREE, scene, ready=()=>{}, maxAnisotropy
      float alignment=dot(ray,sun);
      if(alignment>.995){
       float angle=length(cross(ray,sun));
-      float edge=max(fwidth(angle),.00012);
-      float discSun=1.-smoothstep(.00465-edge,.00465+edge,angle);
+      float core=exp(-angle*angle/.000012);
       float halo=exp(-angle*angle/.00016);
-      color+=vec3(1.,.94,.82)*(discSun*12.+halo*.28);
+      color+=vec3(1.,.86,.64)*(core*2.+halo*.28);
      }
     }
     gl_FragColor=vec4(color,1.);

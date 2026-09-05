@@ -2400,6 +2400,7 @@ import * as THREE from 'three';
   let previousFrame = performance.now();
   function animate(time) {
     requestAnimationFrame(animate);
+    if(document.hidden){previousFrame=time;return;}
     const frameDt = Math.min(Math.max((time - previousFrame) * .001, 0), .08);
     previousFrame = time;
     orbitalClock += frameDt * (reducedMotion ? .35 : 1);
@@ -2411,7 +2412,7 @@ import * as THREE from 'three';
     if (reveal < .002) return;
 
     const targetSpin = scroll * 0.0016;
-    currentSpin += (targetSpin - currentSpin) * 0.08;
+    currentSpin += (targetSpin - currentSpin) * (1-Math.exp(-5*frameDt));
     spin.rotation.y = currentSpin + (reducedMotion ? 0 : time * 0.00003);
 
     const scrollPhase = scroll * 0.0012;
