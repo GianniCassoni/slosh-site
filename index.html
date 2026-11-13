@@ -209,7 +209,7 @@
     height: calc(100dvh - 72px);
     padding-top: 48px;
     overflow: hidden;
-    background: #1b2450;
+    background: #27272a;
   }
   #docking-frame {
     display: block;
@@ -217,7 +217,7 @@
     height: 100%;
     max-width: none;
     border: 0;
-    background: #1b2450;
+    background: #27272a;
   }
   #alt-demo {
     position: fixed;
@@ -716,10 +716,7 @@ ul.pubs .venue{color:var(--muted)}.subhead{margin-top:32px;font-size:10px}
     <div class="eyebrow">Aeronautical Engineering &middot; PhD Candidate</div>
     <h1>Gianni Cassoni</h1>
     <p class="subtitle">Microgravity propellant sloshing &middot; in-orbit refuelling &amp; servicing</p>
-    <p class="tagline">
-      I study how liquid propellant changes spacecraft motion, and how to capture that
-      behaviour in models fast enough for mission simulations.
-    </p>
+
     <div class="cta">
       <a class="primary" href="mailto:gianni.cassoni@uniroma3.it">Contact me</a>
       <a href="assets/CV_GC.pdf" download>Download CV</a>
@@ -763,7 +760,7 @@ ul.pubs .venue{color:var(--muted)}.subhead{margin-top:32px;font-size:10px}
       assume a flat interface. In microgravity, surface tension dominates and the equilibrium meniscus
       can be strongly curved, shifting the natural frequencies and mode shapes. My research connects
       these capillary dynamics to reduced-order models and coupled spacecraft simulations.
-      The browser demo offers an interactive illustration of the coupling, not a flight-qualified prediction. Featured update on
+      Related update on
       <a href="https://www.linkedin.com/feed/update/urn:li:activity:7468333717594333184/" target="_blank" rel="noopener">LinkedIn</a>.
     </p>
 
@@ -888,11 +885,8 @@ ul.pubs .venue{color:var(--muted)}.subhead{margin-top:32px;font-size:10px}
   <section class="block" id="interests">
     <h2>Research interests</h2>
     <p class="lead">
-      Beyond spaceflight fluid dynamics, I am drawn to <strong>computational nonlinear dynamics</strong>&nbsp;&mdash;
-      how organized motion persists in systems governed by simple rules, and when a high-dimensional system
-      genuinely admits a faithful low-dimensional description. The same thread runs through periodic orbits
-      and limit cycles, quasi-periodic tori, bounded chaos, and localized coherent structures &mdash; from
-      rotorcraft stability to fluid&ndash;structure dynamics to continuous cellular automata like Lenia.
+      My research interests include nonlinear dynamics, rotorcraft stability, fluid&ndash;structure interaction,
+      reduced-order models and continuous cellular automata such as Lenia.
     </p>
 
     <div class="lenia-box">
@@ -905,33 +899,10 @@ ul.pubs .venue{color:var(--muted)}.subhead{margin-top:32px;font-size:10px}
           <button id="lenia-reset">Reset</button>
         </div>
       </div>
-      <div class="cap"><b>A live multi-kernel Lenia organism.</b> A continuous-space cellular automaton
-        evolved with MAP-Elites: two coupled growth kernels keep a coherent structure alive while it
-        translates. Use the buttons on the canvas to switch pointer mode: <b>Attract</b> pulls the
-        organism toward your cursor, <b>Repel</b> pushes it away, <b>Feed</b> drops food where you
-        click or tap. Click the active mode again to turn interaction off.</div>
+      <div class="cap"><b>Lenia.</b> Attract or repel the organism with your pointer, click to feed it, or reset the simulation.</div>
     </div>
 
-    <div class="grid2">
-      <div class="card">
-        <div class="role">A unifying residual view</div>
-        <h3>Recurrence &amp; coherent structures</h3>
-        <p>A recurrent or coherent object can be recognized by applying an evolution operator and measuring a
-           <em>residual</em>: how far the state fails to close on itself, possibly after a symmetry or in a
-           moving frame. One language covers exact periodic motion, quasi-periodic near-returns, bounded
-           chaotic recurrence, and local coherent structures &mdash; read together with Floquet multipliers
-           and Lyapunov exponents to tell them apart.</p>
-      </div>
-      <div class="card">
-        <div class="role">Coherent structures &amp; closure</div>
-        <h3>When is a reduced model actually closed?</h3>
-        <p>I study when a compressed feature evolves on its own, weakly coupled to the unresolved degrees of
-           freedom, through a <em>closure residual</em> &mdash; a forward-pass&ndash;only diagnostic. It turns
-           &ldquo;is this reduced description valid?&rdquo; into a number, and travels from Lenia gliders and
-           fluid&ndash;structure features to activation-steering directions in large language models on a
-           single consumer GPU.</p>
-      </div>
-    </div>
+
   </section>
 
   <section class="block" id="contact">
@@ -1629,7 +1600,7 @@ function buildCraftSatellite(preset) {
   // Bus: glassy cage. Render only the FAR walls (BackSide) so the near wall
   // never hides the tank, and draw crisp edges so the structure still reads.
   craft.add(boxMesh(0, 0, 0.5 * (busZ0 + busZ1), 2 * busHalf, 2 * busHalf, busZ1 - busZ0,
-    0xDCE4EE, 0.07, 0xAEC0D8, { side: THREE.BackSide, edgeOpacity: 0.7 }));
+    0xDCE4EE, 0.07, 0x3f3f46, { side: THREE.BackSide, edgeOpacity: 0.7 }));
 
   // Solar panels + booms. Each array carries one normalized out-of-plane
   // bending mode; rigid mode simply sets the modal amplitude to zero.
@@ -2085,13 +2056,13 @@ window.visualViewport?.addEventListener('resize', resizeDemoRenderer);
   // graticule reads as a real globe instead of a transparent cage.
   const solid = new THREE.Mesh(
     new THREE.SphereGeometry(RAD * 0.985, 48, 32),
-    new THREE.MeshBasicMaterial({ color: 0x232e6b })
+    new THREE.MeshBasicMaterial({ color: 0xe5e5e5 })
   );
   spin.add(solid);
   // Latitude/longitude wireframe.
   const wire = new THREE.LineSegments(
     new THREE.WireframeGeometry(new THREE.SphereGeometry(RAD, 36, 24)),
-    new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.24 })
+    new THREE.LineBasicMaterial({ color: 0x525252, transparent: true, opacity: 0.24 })
   );
   spin.add(wire);
   // Bright silhouette ring for a clean engraving-style edge.
@@ -2102,7 +2073,7 @@ window.visualViewport?.addEventListener('resize', resizeDemoRenderer);
   }
   const rim = new THREE.Line(
     new THREE.BufferGeometry().setFromPoints(rimPts),
-    new THREE.LineBasicMaterial({ color: 0xf0ecde, transparent: true, opacity: 0.5 })
+    new THREE.LineBasicMaterial({ color: 0x27272a, transparent: true, opacity: 0.5 })
   );
   globe.add(rim);  // billboard-ish edge, not spun
 
@@ -2110,8 +2081,8 @@ window.visualViewport?.addEventListener('resize', resizeDemoRenderer);
   // wings, carried on its own tilted orbit ring so the paths cross the sphere.
   function makeSatellite() {
     const sat = new THREE.Group();
-    const beige = new THREE.MeshBasicMaterial({ color: 0xf0ecde });
-    const green = new THREE.MeshBasicMaterial({ color: 0xec7a2c });
+    const beige = new THREE.MeshBasicMaterial({ color: 0x27272a });
+    const green = new THREE.MeshBasicMaterial({ color: 0x525252 });
     const bus = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.22), beige);
     sat.add(bus);
     const panelGeo = new THREE.BoxGeometry(0.44, 0.02, 0.14);
@@ -2137,7 +2108,7 @@ window.visualViewport?.addEventListener('resize', resizeDemoRenderer);
     }
     ring.add(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(pts),
-      new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.18 })
+      new THREE.LineBasicMaterial({ color: 0x525252, transparent: true, opacity: 0.18 })
     ));
     const sat = makeSatellite();
     ring.add(sat);
@@ -2307,13 +2278,13 @@ import * as THREE from 'three';
 
   const core = new THREE.Mesh(
     new THREE.SphereGeometry(radius * 0.985, 48, 32),
-    new THREE.MeshBasicMaterial({ color: 0x232e6b })
+    new THREE.MeshBasicMaterial({ color: 0xe5e5e5 })
   );
   spin.add(core);
 
   const gridSphere = new THREE.LineSegments(
     new THREE.WireframeGeometry(new THREE.SphereGeometry(radius, 36, 24)),
-    new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.24 })
+    new THREE.LineBasicMaterial({ color: 0x525252, transparent: true, opacity: 0.24 })
   );
   spin.add(gridSphere);
 
@@ -2324,13 +2295,13 @@ import * as THREE from 'three';
   }
   globe.add(new THREE.Line(
     new THREE.BufferGeometry().setFromPoints(rimPoints),
-    new THREE.LineBasicMaterial({ color: 0xf0ecde, transparent: true, opacity: 0.5 })
+    new THREE.LineBasicMaterial({ color: 0x27272a, transparent: true, opacity: 0.5 })
   ));
 
   function createSatellite() {
     const sat = new THREE.Group();
-    const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0xf0ecde });
-    const panelMaterial = new THREE.MeshBasicMaterial({ color: 0xec7a2c });
+    const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x27272a });
+    const panelMaterial = new THREE.MeshBasicMaterial({ color: 0x525252 });
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.22), bodyMaterial);
     sat.add(body);
     const panelGeometry = new THREE.BoxGeometry(0.44, 0.02, 0.14);
@@ -2360,7 +2331,7 @@ import * as THREE from 'three';
     }
     plane.add(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(points),
-      new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.18 })
+      new THREE.LineBasicMaterial({ color: 0x525252, transparent: true, opacity: 0.18 })
     ));
 
     const model = createSatellite();
@@ -2643,11 +2614,11 @@ import * as THREE from 'three';
   if (resetBtn) resetBtn.addEventListener('click', () => { seed(); steps = 0; snapValid = false; });
   cvs.style.touchAction = 'pan-y';   // taps feed it, page can still scroll
 
-  // Colour ramp: page navy (empty) -> lighter blue -> orange -> beige.
+  // White background, charcoal low densities, orange core.
   function ramp(v, o, idx) {
     let r, g, b;
-    if (v < 0.35) { const t = v / 0.35; r = 35 + t * 25; g = 46 + t * 40; b = 107 + t * 43; }
-    else if (v < 0.7) { const t = (v - 0.35) / 0.35; r = 60 + t * 176; g = 86 + t * 36; b = 150 - t * 106; }
+    if (v < 0.35) { const t = v / 0.35; r = 255 - t * 173; g = 255 - t * 173; b = 255 - t * 173; }
+    else if (v < 0.7) { const t = (v - 0.35) / 0.35; r = 82 + t * 154; g = 82 + t * 40; b = 82 - t * 38; }
     else { const t = (v - 0.7) / 0.3; r = 236 + t * 4; g = 122 + t * 114; b = 44 + t * 178; }
     o[idx] = r; o[idx + 1] = g; o[idx + 2] = b; o[idx + 3] = 255;
   }
