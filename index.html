@@ -61,16 +61,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --bg: #232e6b;
-    --bg2: #1b2450;
-    --panel: rgba(240,236,222,0.06);
-    --panel-border: rgba(240,236,222,0.22);
-    --text: #f0ecde;
-    --muted: rgba(240,236,222,0.66);
+    --bg: #ffffff;
+    --bg2: #f5f6fa;
+    --panel: rgba(27,36,80,0.06);
+    --panel-border: rgba(27,36,80,0.22);
+    --text: #1b2450;
+    --muted: rgba(27,36,80,0.66);
     --accent: #ec7a2c;
     --accent2: rgba(236,122,44,0.9);
     --active: #ec7a2c;
-    --grid: rgba(240,236,222,0.10);
+    --grid: rgba(27,36,80,0.10);
     --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
     --serif: "Instrument Serif", "Times New Roman", Georgia, serif;
   }
@@ -105,8 +105,8 @@
     display: flex; align-items: center; justify-content: space-between;
     min-height: 48px;
     padding: 12px clamp(14px, 4vw, 34px);
-    border-bottom: 1px solid rgba(240,236,222,.16);
-    background: rgba(27,36,80,.96);
+    border-bottom: 1px solid rgba(27,36,80,.16);
+    background: rgba(255,255,255,.96);
     backdrop-filter: blur(3px);
     pointer-events: none;
   }
@@ -177,7 +177,7 @@
   }
   .lenia-ui button {
     padding: 6px 12px; border-radius: 9px; cursor: pointer;
-    border: 1px solid var(--panel-border); background: rgba(27,36,80,.64);
+    border: 1px solid var(--panel-border); background: rgba(255,255,255,.64);
     color: var(--text); font-size: 11px; line-height: 1.15;
     backdrop-filter: blur(2px); transition: all .12s;
   }
@@ -189,15 +189,13 @@
   }
   .lenia-box .cap b { color: var(--text); font-weight: 500; }
 
-  /* Footer affiliation badges (AIDAA + Italian Builders). */
+  /* Footer affiliation badge (AIDAA). */
   .affil { display: flex; flex-wrap: wrap; justify-content: center; gap: 34px; margin-top: 28px; }
   .affil .item { display: flex; flex-direction: column; align-items: center; gap: 9px; max-width: 240px; }
   .affil .lab { font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); line-height: 1.5; }
   .affil a { display: inline-flex; opacity: .9; transition: opacity .15s; }
   .affil a:hover { opacity: 1; }
   .affil img { width: auto; display: block; }
-  /* Italian Builders wordmark is white — shows directly on the dark bg. */
-  .affil .ib img { height: 24px; }
   /* AIDAA logo is dark navy — needs a light chip to stay legible. */
   .affil .aidaa a { background: #f0ecde; border-radius: 6px; padding: 8px 12px; }
   .affil .aidaa img { height: 40px; }
@@ -235,10 +233,10 @@
     top: max(12px, env(safe-area-inset-top));
     right: 14px;
     z-index: 3;
-    border: 1px solid rgba(240, 236, 222, .55);
+    border: 1px solid rgba(255,255,255,.55);
     border-radius: 3px;
     padding: 9px 12px;
-    background: rgba(27,36,80,.94);
+    background: rgba(255,255,255,.94);
     color: var(--text);
     font: 600 10px/1 var(--mono);
     letter-spacing: 1.2px;
@@ -265,7 +263,7 @@
   /* Bottom control panel */
   #panel {
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
-    background: linear-gradient(180deg, rgba(27,36,80,0) 0%, rgba(27,36,80,.88) 22%, rgba(27,36,80,.97) 100%);
+    background: linear-gradient(180deg, rgba(27,36,80,0) 0%, rgba(255,255,255,.88) 22%, rgba(255,255,255,.97) 100%);
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     backdrop-filter: blur(6px);
   }
@@ -279,7 +277,7 @@
   }
   button.preset small { display: block; color: var(--muted); font-size: 10px; }
   button.preset.on { background: var(--accent); border-color: var(--accent); color: #1b2450; }
-  button.preset.on small { color: rgba(27,36,80,.8); }
+  button.preset.on small { color: rgba(255,255,255,.8); }
   button.preset:disabled { opacity: .32; cursor: not-allowed; }
 
   .slider { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; }
@@ -356,7 +354,7 @@
     position: absolute;
     top: 22px; left: 50%;
     transform: translateX(-50%);
-    color: rgba(240,236,222,.42);
+    color: rgba(27,36,80,.42);
     font-size: 9px;
     letter-spacing: 1.8px;
     white-space: nowrap;
@@ -411,7 +409,7 @@
   .li-nav {
     position: absolute; top: 50%; transform: translateY(-50%); z-index: 4;
     width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
-    border: 1px solid var(--panel-border); background: rgba(27,36,80,.88);
+    border: 1px solid var(--panel-border); background: rgba(255,255,255,.88);
     color: var(--text); font-size: 20px; line-height: 1; display: flex;
     align-items: center; justify-content: center; transition: border-color .15s, color .15s;
   }
@@ -628,8 +626,8 @@
 .brand-mark{width:42px;height:42px;flex:none;color:var(--accent)}
 .brand-name{display:grid;gap:5px}.brand-name small{font-size:8px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase}
 .brand-scroll-cue{font-size:9px;animation:none;margin-left:12px}
-#nav{background:rgba(20,28,62,.96)}
-main{max-width:1120px;padding-bottom:110px;background:transparent;border-top:1px solid rgba(240,236,222,.12)}
+#nav{background:rgba(255,255,255,.96)}
+main{max-width:1120px;padding-bottom:110px;background:transparent;border-top:1px solid rgba(27,36,80,.12)}
 .hero{text-align:left;padding:32px 0 64px;position:relative;scroll-margin-top:80px}
 .hero h1{font-size:clamp(54px,8vw,100px);letter-spacing:-.025em;margin:18px 0}
 .hero .subtitle{max-width:720px;line-height:1.5;color:var(--text)}
@@ -641,10 +639,10 @@ main{max-width:1120px;padding-bottom:110px;background:transparent;border-top:1px
 section.block{padding:42px 0 44px;scroll-margin-top:90px}
 .block h2{font-size:clamp(32px,4vw,46px);margin:0 0 24px}
 .block p.lead{max-width:800px;font-family:system-ui,sans-serif;font-size:17px;line-height:1.8}
-.card{padding:25px;background:rgba(20,28,62,.68);border-radius:2px;border-color:rgba(240,236,222,.17);backdrop-filter:none}
+.card{padding:25px;background:rgba(255,255,255,.68);border-radius:2px;border-color:rgba(27,36,80,.17);backdrop-filter:none}
 .card .role{margin-bottom:13px;font-size:10px}.card h3{line-height:1.5;font-size:15px}.card p{font-family:system-ui,sans-serif;font-size:15px;line-height:1.75}
-a.paper{background:rgba(20,28,62,.74);border-radius:2px;padding:24px;border-color:rgba(240,236,222,.18);box-shadow:none}
-ul.pubs{padding-left:0;list-style:none}ul.pubs li{padding:20px 0;margin:0;border-bottom:1px solid rgba(240,236,222,.12);font-family:system-ui,sans-serif;font-size:16px;line-height:1.75}
+a.paper{background:rgba(255,255,255,.74);border-radius:2px;padding:24px;border-color:rgba(27,36,80,.18);box-shadow:none}
+ul.pubs{padding-left:0;list-style:none}ul.pubs li{padding:20px 0;margin:0;border-bottom:1px solid rgba(27,36,80,.12);font-family:system-ui,sans-serif;font-size:16px;line-height:1.75}
 ul.pubs .venue{color:var(--muted)}.subhead{margin-top:32px;font-size:10px}
 .contact{gap:10px}a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
 #page-transition{height:clamp(95px,14vh,160px)}
@@ -956,12 +954,6 @@ ul.pubs .venue{color:var(--muted)}.subhead{margin-top:32px;font-size:10px}
           <span class="lab">Organizing Committee Member<br>A.I.D.A.A. &mdash; Italian Association of Aeronautics &amp; Astronautics</span>
           <a href="https://www.aidaa.it/" target="_blank" rel="noopener" aria-label="A.I.D.A.A.">
             <img src="https://www.aidaa.it/wp-content/uploads/2021/01/AIDAA_logo_contorno.png" alt="A.I.D.A.A." />
-          </a>
-        </div>
-        <div class="item ib">
-          <span class="lab">Member of</span>
-          <a href="https://italianbuilders.co" target="_blank" rel="noopener" aria-label="Italian Builders">
-            <img src="https://italianbuilders.co/logo-vector.svg" alt="Italian Builders" />
           </a>
         </div>
       </div>
