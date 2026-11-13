@@ -2056,7 +2056,7 @@ window.visualViewport?.addEventListener('resize', resizeDemoRenderer);
   // graticule reads as a real globe instead of a transparent cage.
   const solid = new THREE.Mesh(
     new THREE.SphereGeometry(RAD * 0.985, 48, 32),
-    new THREE.MeshBasicMaterial({ color: 0xe5e5e5 })
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
   );
   spin.add(solid);
   // Latitude/longitude wireframe.
@@ -2278,7 +2278,7 @@ import * as THREE from 'three';
 
   const core = new THREE.Mesh(
     new THREE.SphereGeometry(radius * 0.985, 48, 32),
-    new THREE.MeshBasicMaterial({ color: 0xe5e5e5 })
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
   );
   spin.add(core);
 
