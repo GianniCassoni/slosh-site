@@ -58,20 +58,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <style>
   :root {
     --bg: #ffffff;
-    --bg2: #f5f5f5;
-    --panel: rgba(39,39,42,0.06);
-    --panel-border: rgba(39,39,42,0.22);
-    --text: #27272a;
-    --muted: rgba(39,39,42,0.66);
+    --bg2: #f5f6fa;
+    --panel: rgba(27,36,80,0.06);
+    --panel-border: rgba(27,36,80,0.22);
+    --text: #1b2450;
+    --muted: rgba(27,36,80,0.66);
     --accent: #ec7a2c;
     --accent2: rgba(236,122,44,0.9);
     --active: #ec7a2c;
-    --grid: rgba(39,39,42,0.10);
-    --sans: "Source Sans 3", system-ui, sans-serif;
+    --grid: rgba(27,36,80,0.10);
     --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
     --serif: "Instrument Serif", "Times New Roman", Georgia, serif;
   }
@@ -106,7 +105,7 @@
     display: flex; align-items: center; justify-content: space-between;
     min-height: 48px;
     padding: 12px clamp(14px, 4vw, 34px);
-    border-bottom: 1px solid rgba(39,39,42,.16);
+    border-bottom: 1px solid rgba(27,36,80,.16);
     background: rgba(255,255,255,.96);
     backdrop-filter: blur(3px);
     pointer-events: none;
@@ -183,7 +182,7 @@
     backdrop-filter: blur(2px); transition: all .12s;
   }
   .lenia-ui button:hover { border-color: var(--accent); }
-  .lenia-ui button.on { background: var(--accent); border-color: var(--accent); color: #27272a; }
+  .lenia-ui button.on { background: var(--accent); border-color: var(--accent); color: #1b2450; }
   .lenia-box .cap {
     font-size: 13.5px; color: var(--muted); line-height: 1.6;
     padding: 14px 18px 16px; border-top: 1px solid var(--panel-border);
@@ -264,7 +263,7 @@
   /* Bottom control panel */
   #panel {
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
-    background: linear-gradient(180deg, rgba(39,39,42,0) 0%, rgba(255,255,255,.88) 22%, rgba(255,255,255,.97) 100%);
+    background: linear-gradient(180deg, rgba(27,36,80,0) 0%, rgba(255,255,255,.88) 22%, rgba(255,255,255,.97) 100%);
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
     backdrop-filter: blur(6px);
   }
@@ -277,7 +276,7 @@
     font-size: 11px; line-height: 1.15; cursor: pointer; transition: all .12s;
   }
   button.preset small { display: block; color: var(--muted); font-size: 10px; }
-  button.preset.on { background: var(--accent); border-color: var(--accent); color: #27272a; }
+  button.preset.on { background: var(--accent); border-color: var(--accent); color: #1b2450; }
   button.preset.on small { color: rgba(255,255,255,.8); }
   button.preset:disabled { opacity: .32; cursor: not-allowed; }
 
@@ -297,8 +296,8 @@
     border-radius: 12px; font-size: 20px; font-weight: 600; cursor: pointer;
     display: flex; align-items: center; justify-content: center; user-select: none;
   }
-  .pad button:active, .pad button.press { background: var(--active); border-color: var(--active); color: #27272a; }
-  .actions button:active, .actions button.press { background: var(--active); border-color: var(--active); color: #27272a; }
+  .pad button:active, .pad button.press { background: var(--active); border-color: var(--active); color: #1b2450; }
+  .actions button:active, .actions button.press { background: var(--active); border-color: var(--active); color: #1b2450; }
   .pad .c { visibility: hidden; }
   /* Spacecraft selector — vertical stack on the left edge of the demo. */
   #craft-select {
@@ -344,8 +343,8 @@
     pointer-events: none;
     background:
       linear-gradient(180deg,
-        rgba(39,39,42,.40) 0%,
-        rgba(39,39,42,.30) 16%,
+        rgba(27,36,80,.40) 0%,
+        rgba(27,36,80,.30) 16%,
         rgba(31,41,91,.18) 48%,
         rgba(35,46,107,.07) 76%,
         rgba(35,46,107,0) 100%);
@@ -355,7 +354,7 @@
     position: absolute;
     top: 22px; left: 50%;
     transform: translateX(-50%);
-    color: rgba(39,39,42,.42);
+    color: rgba(27,36,80,.42);
     font-size: 9px;
     letter-spacing: 1.8px;
     white-space: nowrap;
@@ -379,7 +378,7 @@
     text-transform: uppercase; border: 1px solid var(--panel-border); color: var(--text);
     background: transparent; transition: all .15s;
   }
-  .cta a.primary { background: var(--accent); border-color: var(--accent); color: #27272a; }
+  .cta a.primary { background: var(--accent); border-color: var(--accent); color: #1b2450; }
   .cta a:hover { border-color: var(--text); }
 
   section.block { padding: 54px 0 6px; border-top: 1px solid var(--panel-border); }
@@ -440,7 +439,7 @@
   }
   .li-post .li-tag b {
     display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px;
-    border-radius: 3px; background: var(--accent); color: #27272a; font-weight: 700; font-size: 11px;
+    border-radius: 3px; background: var(--accent); color: #1b2450; font-weight: 700; font-size: 11px;
   }
   .li-post .li-tag.esa b {
     width: auto; height: auto; background: none; color: var(--accent); font-size: 13px; letter-spacing: 1px;
@@ -462,7 +461,7 @@
     font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 3px 8px;
     border-radius: 2px; border: 1px solid var(--panel-border); color: var(--muted);
   }
-  .paper .badge.new { background: var(--accent); border-color: var(--accent); color: #27272a; }
+  .paper .badge.new { background: var(--accent); border-color: var(--accent); color: #1b2450; }
   .paper h3 { font-family: var(--serif); font-weight: 400; font-size: 21px; line-height: 1.15;
               margin: 0 0 8px; color: var(--text); }
   .paper .authors { color: var(--muted); font-size: 12.5px; line-height: 1.5; margin: 0 0 12px; }
@@ -628,7 +627,7 @@
 .brand-name{display:grid;gap:5px}.brand-name small{font-size:8px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase}
 .brand-scroll-cue{font-size:9px;animation:none;margin-left:12px}
 #nav{background:rgba(255,255,255,.96)}
-main{max-width:1120px;padding-bottom:110px;background:transparent;border-top:1px solid rgba(39,39,42,.12)}
+main{max-width:1120px;padding-bottom:110px;background:transparent;border-top:1px solid rgba(27,36,80,.12)}
 .hero{text-align:left;padding:32px 0 64px;position:relative;scroll-margin-top:80px}
 .hero h1{font-size:clamp(54px,8vw,100px);letter-spacing:-.025em;margin:18px 0}
 .hero .subtitle{max-width:720px;line-height:1.5;color:var(--text)}
@@ -640,48 +639,15 @@ main{max-width:1120px;padding-bottom:110px;background:transparent;border-top:1px
 section.block{padding:42px 0 44px;scroll-margin-top:90px}
 .block h2{font-size:clamp(32px,4vw,46px);margin:0 0 24px}
 .block p.lead{max-width:800px;font-family:system-ui,sans-serif;font-size:17px;line-height:1.8}
-.card{padding:25px;background:rgba(255,255,255,.68);border-radius:2px;border-color:rgba(39,39,42,.17);backdrop-filter:none}
+.card{padding:25px;background:rgba(255,255,255,.68);border-radius:2px;border-color:rgba(27,36,80,.17);backdrop-filter:none}
 .card .role{margin-bottom:13px;font-size:10px}.card h3{line-height:1.5;font-size:15px}.card p{font-family:system-ui,sans-serif;font-size:15px;line-height:1.75}
-a.paper{background:rgba(255,255,255,.74);border-radius:2px;padding:24px;border-color:rgba(39,39,42,.18);box-shadow:none}
-ul.pubs{padding-left:0;list-style:none}ul.pubs li{padding:20px 0;margin:0;border-bottom:1px solid rgba(39,39,42,.12);font-family:system-ui,sans-serif;font-size:16px;line-height:1.75}
+a.paper{background:rgba(255,255,255,.74);border-radius:2px;padding:24px;border-color:rgba(27,36,80,.18);box-shadow:none}
+ul.pubs{padding-left:0;list-style:none}ul.pubs li{padding:20px 0;margin:0;border-bottom:1px solid rgba(27,36,80,.12);font-family:system-ui,sans-serif;font-size:16px;line-height:1.75}
 ul.pubs .venue{color:var(--muted)}.subhead{margin-top:32px;font-size:10px}
 .contact{gap:10px}a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
 #page-transition{height:clamp(95px,14vh,160px)}
 @media(max-width:680px){#nav .brand{font-size:10px;gap:8px}.brand-mark{width:29px;height:29px}.brand-scroll-cue{display:none}.brand-name small{font-size:7px}.hero{padding:22px 0 40px}.hero .tagline{font-size:16px}.hero .subtitle{font-size:15px}.research-index{gap:16px}.card,a.paper{padding:19px}section.block{padding:30px 0}.block p.lead{font-size:16px}.cta a{padding:11px 12px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
-
-/* Research portfolio: white surfaces, orange linework, readable text. */
-body{font-family:var(--sans);font-size:17px;line-height:1.6}
-h1,h2{font-family:var(--serif);font-weight:400}
-h3{font-family:var(--sans);font-weight:600}
-#nav .brand,.eyebrow,.unit-number,.unit-category,.card .role,.subhead,.badge,.tag{font-family:var(--mono)}
-#nav .links{font-family:var(--sans);font-size:14px}
-body>.hero{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:116px clamp(20px,5vw,40px) 40px;scroll-margin-top:70px}
-.hero h1{margin:12px 0;font-size:clamp(54px,7vw,86px);line-height:1.05}
-.hero .subtitle{font-family:var(--sans);font-size:clamp(18px,2vw,23px);max-width:750px;margin:18px 0 0}
-.intro-summary{max-width:620px;color:var(--muted);margin:12px 0 0;font-size:18px}
-.hero .cta{margin-top:23px}.cta a{font-family:var(--sans);font-size:14px;letter-spacing:0;text-transform:none;border-radius:2px;padding:9px 15px}
-.cta a.primary{background:var(--accent);color:#27272a}
-.research-index{margin-top:25px;padding-top:16px;gap:24px}.research-index a{font-family:var(--sans);font-size:13px;letter-spacing:0}
-#demo{width:calc(100% - 40px);max-width:1120px;height:clamp(340px,48vh,560px);padding-top:0;margin:0 auto 24px;border:1px solid #d4d4d4;border-radius:3px;scroll-margin-top:75px}
-main{border-top:0;padding-top:0}
-section.block{padding:42px 0}.block p.lead,.card p,ul.pubs li{font-family:var(--sans)}
-.card,a.paper{background:#fff;border-color:#dedede}.paper h3{font-family:var(--sans);font-size:19px;line-height:1.4}
-.research-roster{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-bottom:36px}
-.research-unit{position:relative;background:#fff;border:1px solid #dedede;border-top:3px solid var(--accent);display:flex;flex-direction:column;min-width:0;transition:border-color .2s,transform .2s}
-.research-unit:hover{border-color:var(--accent);transform:translateY(-3px)}
-.unit-art{position:relative;height:280px;margin:9px;padding:32px 12px 14px;border:1px solid #f1c5a5;background:#fff;display:flex;align-items:center;justify-content:center}
-.unit-art::before,.unit-art::after{content:"";position:absolute;width:12px;height:12px;border-color:var(--accent);border-style:solid;pointer-events:none}
-.unit-art::before{top:5px;left:5px;border-width:1px 0 0 1px}.unit-art::after{right:5px;bottom:5px;border-width:0 1px 1px 0}
-.unit-art img{width:100%;height:100%;object-fit:contain}.unit-number{position:absolute;top:9px;right:12px;font-size:11px;color:var(--accent)}
-.unit-copy{padding:18px 22px 24px;display:flex;flex-direction:column;flex:1}.unit-category{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#7a4a29}
-.unit-copy h3{font-family:var(--serif);font-weight:400;font-size:30px;line-height:1.15;margin:10px 0 14px}.unit-copy p{font-size:17px;line-height:1.55;margin:0 0 22px;color:#52525b}.unit-copy a{margin-top:auto;font-size:14px;font-weight:600;color:#27272a;text-decoration:none;text-underline-offset:4px}.unit-copy a span{color:var(--accent);margin-left:8px}.unit-copy a:hover{text-decoration:underline;text-decoration-color:var(--accent)}
-.tag{background:#f5f5f5;color:#52525b;border-color:#dedede;font-size:11px}.affil .aidaa a{background:#f5f5f5}
-.li-post{background:#fff}.li-title{font-family:var(--sans)}
-@media(max-width:760px){body>.hero{padding-top:92px;padding-bottom:30px}.hero .subtitle{font-size:19px}.intro-summary{font-size:17px}.research-roster{gap:14px}.unit-art{height:210px;padding:28px 5px 10px}.unit-copy{padding:14px}.unit-copy h3{font-size:25px}.unit-copy p{font-size:16px}}
-@media(max-width:600px){.research-roster{grid-template-columns:1fr;max-width:390px;margin:0 auto 32px;gap:24px}.unit-art{height:285px;padding:30px 18px 16px}.unit-copy{padding:18px 22px 24px}.unit-copy h3{font-size:30px}.research-index{gap:12px 22px}#demo{width:calc(100% - 32px);height:420px}.hero .cta{gap:8px}.hero .cta a{padding:8px 12px}}
-@media(prefers-reduced-motion:reduce){.research-unit:hover{transform:none}}
-
 </style>
 </head>
 <body>
@@ -689,10 +655,10 @@ section.block{padding:42px 0}.block p.lead,.card p,ul.pubs li{font-family:var(--
 <div id="grid-bg"></div>
 
 <nav id="nav">
-  <a class="brand" href="#top">
+  <a class="brand" href="#research">
     <img class="brand-mark" src="assets/favicon.svg" alt="" width="42" height="42" />
     <span class="brand-name">GIANNI CASSONI<small>Spacecraft dynamics</small></span>
-
+    <span class="brand-scroll-cue" aria-hidden="true">▼&nbsp;SCROLL</span>
   </a>
   <div class="links">
     <a href="#demo">Docking</a>
@@ -704,24 +670,7 @@ section.block{padding:42px 0}.block p.lead,.card p,ul.pubs li{font-family:var(--
   </div>
 </nav>
 
-  <header class="hero" id="top">
-    <div class="eyebrow">Aeronautical Engineering &middot; PhD Candidate</div>
-    <h1>Gianni Cassoni</h1>
-    <p class="subtitle">Microgravity propellant sloshing &middot; in-orbit refuelling &amp; servicing</p>
-
-    <p class="intro-summary">I develop models of liquid propellant motion and its effects on spacecraft dynamics.</p>
-    <div class="cta">
-      <a class="primary" href="mailto:gianni.cassoni@uniroma3.it">Contact me</a>
-      <a href="assets/CV_GC.pdf" download>Download CV</a>
-      <a href="https://www.linkedin.com/in/giannicassoni" target="_blank" rel="noopener">LinkedIn</a>
-      <a href="https://www.researchgate.net/profile/Gianni-Cassoni" target="_blank" rel="noopener">ResearchGate</a>
-      <a href="https://github.com/GianniCassoni" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://x.com/gianni_cassoni" target="_blank" rel="noopener">X</a>
-    </div>
-    <div class="research-index" aria-label="Explore research"><a href="#research"><span>01</span>Research</a><a href="#publications"><span>02</span>Publications</a><a href="#about"><span>03</span>Background</a><a href="#contact"><span>04</span>Get in touch</a></div>
-  </header>
-
-<section id="demo" aria-label="Interactive docking simulation">
+<section id="demo">
   <iframe
     id="docking-frame"
     src="./slosh-dock.html"
@@ -760,26 +709,60 @@ section.block{padding:42px 0}.block p.lead,.card p,ul.pubs li{font-family:var(--
 </div>
 -->
 
+<div id="page-transition" aria-hidden="true"></div>
 
 <main>
+  <header class="hero" id="top">
+    <div class="eyebrow">Aeronautical Engineering &middot; PhD Candidate</div>
+    <h1>Gianni Cassoni</h1>
+    <p class="subtitle">Microgravity propellant sloshing &middot; in-orbit refuelling &amp; servicing</p>
 
+    <div class="cta">
+      <a class="primary" href="mailto:gianni.cassoni@uniroma3.it">Contact me</a>
+      <a href="assets/CV_GC.pdf" download>Download CV</a>
+      <a href="https://www.linkedin.com/in/giannicassoni" target="_blank" rel="noopener">LinkedIn</a>
+      <a href="https://www.researchgate.net/profile/Gianni-Cassoni" target="_blank" rel="noopener">ResearchGate</a>
+      <a href="https://github.com/GianniCassoni" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://x.com/gianni_cassoni" target="_blank" rel="noopener">X</a>
+    </div>
+    <div class="research-index" aria-label="Explore research"><a href="#research"><span>01</span>Research</a><a href="#publications"><span>02</span>Publications</a><a href="#about"><span>03</span>Background</a><a href="#contact"><span>04</span>Get in touch</a></div>
+  </header>
+
+  <section class="block" id="about">
+    <h2>About</h2>
+    <p class="lead">
+      I am a PhD candidate developing models of microgravity sloshing for in-orbit refuelling and
+      servicing. My work spans semi-analytical formulations for capillary sloshing and a coupled
+      OpenFOAM&ndash;MBDyn framework for ullage-impact loads on spacecraft structures, backed by
+      high-performance computing on CINECA Leonardo. I also supervise thesis students in technical
+      work and research planning.
+    </p>
+    <div class="grid2">
+      <div class="card">
+        <div class="role">Dec 2024 &ndash; Present</div>
+        <h3>Thales Alenia Space &amp; Roma Tre University</h3>
+        <p>PhD Candidate. Semi-analytical capillary sloshing models and a coupled
+           OpenFOAM&ndash;MBDyn framework for ullage-impact loads; thesis-student supervision.</p>
+      </div>
+      <div class="card">
+        <div class="role">Jul 2022 &ndash; Present</div>
+        <h3>Politecnico di Milano</h3>
+        <p>Fellow Researcher. Rotorcraft fleet forecasting to 2050, ATTILA tiltrotor aeroelastic
+           flutter (with Leonardo, NLR, DLR), and rotorcraft&ndash;pilot coupling data analysis.</p>
+      </div>
+    </div>
+  </section>
 
   <section class="block" id="research">
-    <h2>Research</h2>
-    <div class="research-roster">
-      <article class="research-unit">
-        <div class="unit-art"><span class="unit-number">01</span><img src="assets/research/capillary.svg" alt="Tank cross-section showing a curved liquid interface and capillary slosh mode" width="370" height="303" loading="lazy" /></div>
-        <div class="unit-copy"><span class="unit-category">Capillary dynamics</span><h3>Microgravity sloshing</h3><p>How a curved liquid surface changes sloshing frequencies and mode shapes in microgravity.</p><a href="https://www.researchgate.net/publication/404396550_Curvature-corrected_sloshing_spectra_for_cylindrical_tanks_in_microgravity" target="_blank" rel="noopener">Read the preprint <span aria-hidden="true">↗</span></a></div>
-      </article>
-      <article class="research-unit">
-        <div class="unit-art"><span class="unit-number">02</span><img src="assets/research/ullage.svg" alt="Research schematic comparing liquid-interface descriptions in a propellant tank" width="1290" height="781" loading="lazy" /></div>
-        <div class="unit-copy"><span class="unit-category">Fluid–structure interaction</span><h3>Ullage-impact loads</h3><p>Coupled fluid and multibody simulations of liquid impacts and the resulting loads on spacecraft.</p><a href="https://doi.org/10.21203/rs.3.rs-9858850/v1" target="_blank" rel="noopener">Read the preprint <span aria-hidden="true">↗</span></a></div>
-      </article>
-      <article class="research-unit">
-        <div class="unit-art"><span class="unit-number">03</span><img src="assets/research/docking.svg" alt="Spacecraft schematic with propellant tank and solar arrays" width="370" height="366" loading="lazy" /></div>
-        <div class="unit-copy"><span class="unit-category">In-orbit servicing</span><h3>Docking &amp; refuelling</h3><p>Reduced-order models for studying how propellant motion affects spacecraft approach and capture.</p><a href="#demo">Explore the simulator <span aria-hidden="true">↑</span></a></div>
-      </article>
-    </div>
+    <h2>Research highlight</h2>
+    <p class="lead">
+      <strong>Curvature-corrected sloshing spectra for microgravity.</strong> Classical slosh models
+      assume a flat interface. In microgravity, surface tension dominates and the equilibrium meniscus
+      can be strongly curved, shifting the natural frequencies and mode shapes. My research connects
+      these capillary dynamics to reduced-order models and coupled spacecraft simulations.
+      Related update on
+      <a href="https://www.linkedin.com/feed/update/urn:li:activity:7468333717594333184/" target="_blank" rel="noopener">LinkedIn</a>.
+    </p>
 
     <div class="papers">
       <a class="paper" href="https://www.researchgate.net/publication/405976842_Coupled_Fluid-Multibody_Simulation_of_Ullage_Impact_Loads_on_Spacecraft" target="_blank" rel="noopener">
@@ -815,31 +798,6 @@ section.block{padding:42px 0}.block p.lead,.card p,ul.pubs li{font-family:var(--
         <span class="li-title">Physics-based validity maps of linear and non-smooth slosh reduced-order models for servicing mission design</span>
         <span class="li-open">View on ESA OSIP &nearr;</span>
       </a>
-    </div>
-  </section>
-
-  <section class="block" id="about">
-    <h2>About</h2>
-    <p class="lead">
-      I am a PhD candidate developing models of microgravity sloshing for in-orbit refuelling and
-      servicing. My work spans semi-analytical formulations for capillary sloshing and a coupled
-      OpenFOAM&ndash;MBDyn framework for ullage-impact loads on spacecraft structures, backed by
-      high-performance computing on CINECA Leonardo. I also supervise thesis students in technical
-      work and research planning.
-    </p>
-    <div class="grid2">
-      <div class="card">
-        <div class="role">Dec 2024 &ndash; Present</div>
-        <h3>Thales Alenia Space &amp; Roma Tre University</h3>
-        <p>PhD Candidate. Semi-analytical capillary sloshing models and a coupled
-           OpenFOAM&ndash;MBDyn framework for ullage-impact loads; thesis-student supervision.</p>
-      </div>
-      <div class="card">
-        <div class="role">Jul 2022 &ndash; Present</div>
-        <h3>Politecnico di Milano</h3>
-        <p>Fellow Researcher. Rotorcraft fleet forecasting to 2050, ATTILA tiltrotor aeroelastic
-           flutter (with Leonardo, NLR, DLR), and rotorcraft&ndash;pilot coupling data analysis.</p>
-      </div>
     </div>
   </section>
 
@@ -2416,8 +2374,8 @@ import * as THREE from 'three';
     const scroll = window.scrollY || 0;
     const viewport = Math.max(1, window.innerHeight);
     const reveal = THREE.MathUtils.smoothstep(scroll / viewport, 0.34, 0.82);
-    host.style.opacity = String(reveal * 0.28);
-    if (grid) grid.style.opacity = String(reveal * 0.24);
+    host.style.opacity = String(reveal);
+    if (grid) grid.style.opacity = String(reveal * 0.82);
     if (reveal < .002) return;
 
     const targetSpin = scroll * 0.0016;
