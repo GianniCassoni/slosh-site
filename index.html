@@ -1600,7 +1600,7 @@ function buildCraftSatellite(preset) {
   // Bus: glassy cage. Render only the FAR walls (BackSide) so the near wall
   // never hides the tank, and draw crisp edges so the structure still reads.
   craft.add(boxMesh(0, 0, 0.5 * (busZ0 + busZ1), 2 * busHalf, 2 * busHalf, busZ1 - busZ0,
-    0xDCE4EE, 0.07, 0x3f3f46, { side: THREE.BackSide, edgeOpacity: 0.7 }));
+    0xDCE4EE, 0.35, 0xec7a2c, { side: THREE.BackSide, edgeOpacity: 0.7 }));
 
   // Solar panels + booms. Each array carries one normalized out-of-plane
   // bending mode; rigid mode simply sets the modal amplitude to zero.
@@ -2284,7 +2284,7 @@ import * as THREE from 'three';
 
   const gridSphere = new THREE.LineSegments(
     new THREE.WireframeGeometry(new THREE.SphereGeometry(radius, 36, 24)),
-    new THREE.LineBasicMaterial({ color: 0x525252, transparent: true, opacity: 0.24 })
+    new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.45 })
   );
   spin.add(gridSphere);
 
@@ -2295,12 +2295,12 @@ import * as THREE from 'three';
   }
   globe.add(new THREE.Line(
     new THREE.BufferGeometry().setFromPoints(rimPoints),
-    new THREE.LineBasicMaterial({ color: 0x27272a, transparent: true, opacity: 0.5 })
+    new THREE.LineBasicMaterial({ color: 0xec7a2c, transparent: true, opacity: 0.7 })
   ));
 
   function createSatellite() {
     const sat = new THREE.Group();
-    const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0x27272a });
+    const bodyMaterial = new THREE.MeshBasicMaterial({ color: 0xdce0e4 });
     const panelMaterial = new THREE.MeshBasicMaterial({ color: 0x525252 });
     const body = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.22), bodyMaterial);
     sat.add(body);
@@ -2310,6 +2310,10 @@ import * as THREE from 'three';
     left.position.x = -0.32;
     right.position.x = 0.32;
     sat.add(left, right);
+    const edgeMaterial = new THREE.LineBasicMaterial({ color: 0xec7a2c });
+    for (const mesh of [body, left, right]) {
+      mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), edgeMaterial));
+    }
     return sat;
   }
 
