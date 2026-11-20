@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#121214" media="(prefers-color-scheme: dark)" />
 
 <title>Gianni Cassoni | Spacecraft Dynamics &amp; Microgravity Sloshing</title>
 <meta name="description" content="Gianni Cassoni is a PhD researcher in spacecraft dynamics, microgravity propellant sloshing, reduced-order modelling, CFD–multibody coupling, and in-orbit refuelling." />
@@ -19,15 +22,15 @@
 <meta property="og:title" content="Gianni Cassoni | Spacecraft Dynamics &amp; Microgravity Sloshing" />
 <meta property="og:description" content="Research in spacecraft dynamics, microgravity propellant sloshing, reduced-order modelling, CFD–multibody coupling, and in-orbit refuelling." />
 <meta property="og:url" content="https://giannicassoni.com/" />
-<meta property="og:image" content="https://giannicassoni.com/assets/og-image.png" />
-<meta property="og:image:width" content="1200" />
-<meta property="og:image:height" content="630" />
+<meta property="og:image" content="https://giannicassoni.com/assets/og-image.png?v=3" />
+<meta property="og:image:width" content="2400" />
+<meta property="og:image:height" content="1260" />
 <meta property="og:image:alt" content="Gianni Cassoni — spacecraft dynamics and microgravity sloshing research" />
 
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Gianni Cassoni | Spacecraft Dynamics &amp; Microgravity Sloshing" />
 <meta name="twitter:description" content="Research in spacecraft dynamics, microgravity propellant sloshing, reduced-order modelling, CFD–multibody coupling, and in-orbit refuelling." />
-<meta name="twitter:image" content="https://giannicassoni.com/assets/og-image.png" />
+<meta name="twitter:image" content="https://giannicassoni.com/assets/og-image.png?v=3" />
 
 <script type="application/ld+json">
 {
@@ -672,6 +675,33 @@ body{font-family:var(--sans);font-size:17px;line-height:1.6}
 a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:5px}
 @media(max-width:680px){.hero .subtitle{font-size:17px}.cta a{font-size:13px}.card p{font-size:16px}}
 
+/* Dark palette: warm near-black with the same orange accent. Declaring it
+   stops browsers from auto-darkening the page into flat grey. */
+@media (prefers-color-scheme: dark){
+:root{--bg:#121214;--bg2:#18181b;--panel:rgba(244,244,245,.04);--panel-border:rgba(244,244,245,.14);
+--text:#ededef;--muted:rgba(237,237,239,.66);--accent:#f28a43;--accent2:rgba(242,138,67,.92);--active:#f28a43;--grid:rgba(244,244,245,.045)}
+#nav{background:rgba(18,18,20,.94);border-bottom-color:rgba(244,244,245,.10)}
+main{border-top-color:rgba(244,244,245,.10)}
+.card,a.paper,.li-post{background:#1a1a1d;border-color:#2c2c31}
+a.paper.featured{border-color:rgba(242,138,67,.45)}
+.tag{background:#222226;color:#b4b4bb;border-color:#2c2c31}
+ul.pubs li{border-bottom-color:rgba(244,244,245,.09)}
+.lenia-ui button{background:rgba(18,18,20,.64)}
+.lenia-ui button.on,button.preset.on,.cta a.primary,.paper .badge.new{color:#121214}
+#close-alt-demo{background:rgba(18,18,20,.92);color:var(--text);border-color:rgba(244,244,245,.3)}
+#page-transition{background:linear-gradient(180deg,rgba(0,0,0,.25),rgba(18,18,20,0))}
+#page-transition::before{color:#8b8b93}
+.affil .aidaa a{background:#ece9df}
+}
+/* Glass boxes: translucent fill, blur of the grid behind, light top edge. */
+.card,a.paper,.li-post,.lenia-box,.li-viewport{background:linear-gradient(180deg,rgba(255,255,255,.78),rgba(255,255,255,.58));
+border-color:rgba(39,39,42,.12);-webkit-backdrop-filter:blur(14px) saturate(140%);backdrop-filter:blur(14px) saturate(140%);
+box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 10px 30px -12px rgba(39,39,42,.14)}
+@media (prefers-color-scheme: dark){
+.card,a.paper,.li-post,.lenia-box,.li-viewport{background:linear-gradient(160deg,rgba(255,255,255,.10),rgba(255,255,255,.025) 55%,rgba(255,255,255,.04));
+border-color:rgba(255,255,255,.10);border-top-color:rgba(255,255,255,.20);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 14px 34px -14px rgba(0,0,0,.6)}
+a.paper.featured{border-color:rgba(242,138,67,.45)}
+}
 </style>
 </head>
 <body>
@@ -2686,9 +2716,10 @@ import * as THREE from 'three';
   cvs.style.touchAction = 'pan-y';   // taps feed it, page can still scroll
 
   // White background, charcoal low densities, orange core.
+  const LBG = matchMedia('(prefers-color-scheme: dark)').matches ? 26 : 255;
   function ramp(v, o, idx) {
     let r, g, b;
-    if (v < 0.35) { const t = v / 0.35; r = 255 - t * 173; g = 255 - t * 173; b = 255 - t * 173; }
+    if (v < 0.35) { const t = v / 0.35; r = g = b = LBG + t * (82 - LBG); }
     else if (v < 0.7) { const t = (v - 0.35) / 0.35; r = 82 + t * 154; g = 82 + t * 40; b = 82 - t * 38; }
     else { const t = (v - 0.7) / 0.3; r = 236 + t * 4; g = 122 + t * 114; b = 44 + t * 178; }
     o[idx] = r; o[idx + 1] = g; o[idx + 2] = b; o[idx + 3] = 255;
