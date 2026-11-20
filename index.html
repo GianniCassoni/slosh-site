@@ -451,6 +451,7 @@
   /* Featured paper cards (pantheon-style boxes linked to the PDF) */
   .papers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px auto 4px; max-width: 720px; }
   @media (max-width: 680px) { .papers { grid-template-columns: 1fr; } }
+  .paper.featured { grid-column: 1 / -1; }
   a.paper {
     display: flex; flex-direction: column; text-decoration: none; color: var(--text);
     background: var(--panel); border: 1px solid var(--panel-border); border-radius: 4px;
@@ -777,18 +778,28 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
   <section class="block" id="research">
     <h2>Research highlight</h2>
     <p class="lead">
-      <strong>Curvature-corrected sloshing spectra for microgravity.</strong> Classical slosh models
-      assume a flat interface. In microgravity, surface tension dominates and the equilibrium meniscus
-      can be strongly curved, shifting the natural frequencies and mode shapes. My research connects
-      these capillary dynamics to reduced-order models and coupled spacecraft simulations.
+      <strong>Slosh models for GNC that hold in microgravity.</strong> Classical slosh models
+      assume a flat interface. In orbit, surface tension curves the meniscus and the contact line
+      sticks and slips on the tank wall, shifting frequencies and setting the damping. My latest model
+      keeps both effects in a passive port-Hamiltonian form that runs faster than real time, and was
+      validated against Space Shuttle flight data (MODE) and drop-tower experiments.
       Related update on
       <a href="https://www.linkedin.com/feed/update/urn:li:activity:7468333717594333184/" target="_blank" rel="noopener">LinkedIn</a>.
     </p>
 
     <div class="papers">
-      <a class="paper" href="https://www.researchgate.net/publication/405976842_Coupled_Fluid-Multibody_Simulation_of_Ullage_Impact_Loads_on_Spacecraft" target="_blank" rel="noopener">
+      <a class="paper featured" href="https://arxiv.org/abs/2611.24736" target="_blank" rel="noopener">
         <div class="badges">
           <span class="badge new">New</span>
+          <span class="badge">Preprint</span>
+          <span class="badge">arXiv</span>
+        </div>
+        <h3>A curvature-corrected port-Hamiltonian reduced-order model for dissipative sloshing with contact-line hysteresis in low-gravity tanks</h3>
+        <p class="authors"><b>G. Cassoni</b>, F. Gennari, J. Serafini, P. Masarati</p>
+        <div class="foot"><span class="date">November 2026</span><span class="open">Read on arXiv &rarr;</span></div>
+      </a>
+      <a class="paper" href="https://www.researchgate.net/publication/405976842_Coupled_Fluid-Multibody_Simulation_of_Ullage_Impact_Loads_on_Spacecraft" target="_blank" rel="noopener">
+        <div class="badges">
           <span class="badge">Preprint</span>
           <span class="badge">File available</span>
         </div>
@@ -798,7 +809,6 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
       </a>
       <a class="paper" href="https://www.researchgate.net/publication/404396550_Curvature-corrected_sloshing_spectra_for_cylindrical_tanks_in_microgravity" target="_blank" rel="noopener">
         <div class="badges">
-          <span class="badge new">New</span>
           <span class="badge">Preprint</span>
           <span class="badge">File available</span>
         </div>
@@ -827,12 +837,18 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
 
     <div class="subhead">Journal articles</div>
     <ul class="pubs">
+      <li>Cassoni, G., Gennari, F., Serafini, J., &amp; Masarati, P. (2026). <em>A curvature-corrected
+          port-Hamiltonian reduced-order model for dissipative sloshing with contact-line hysteresis in
+          low-gravity tanks.</em>
+          <span class="venue">Preprint, under review at Acta Astronautica.</span>
+          <a href="https://arxiv.org/abs/2611.24736" target="_blank" rel="noopener">arXiv</a></li>
       <li>Cassoni, G., Serafini, J., Gennari, F., &amp; Masarati, P. (2026). <em>Coupled Fluid&ndash;Multibody
           Simulation of Ullage Impact Loads on Spacecraft.</em>
           <span class="venue">Preprint, under review at Multibody System Dynamics.</span>
           <a href="https://doi.org/10.21203/rs.3.rs-9858850/v1" target="_blank" rel="noopener">DOI</a></li>
       <li>Cassoni, G. <em>Curvature-corrected sloshing spectra for cylindrical tanks in microgravity.</em>
-          <span class="venue">Preprint (2026)</span></li>
+          <span class="venue">Preprint (2026).</span>
+          <a href="https://arxiv.org/abs/2605.00168" target="_blank" rel="noopener">arXiv</a></li>
       <li>Cassoni, G., Cocco, A., Tamer, A., Zanoni, A., &amp; Masarati, P. (2024). <em>Rotorcraft stability
           analysis using Lyapunov characteristic exponents estimated from multibody dynamics.</em>
           <span class="venue">CEAS Aeronautical Journal, 15(3), 703&ndash;719.</span>
@@ -859,11 +875,18 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-off
           <span class="venue">NODYCON 2026, Rome, Italy, Sep 20&ndash;23, 2026.</span></li>
       <li>Cassoni, G., Nerattini, A., Colella, A., Gennari, F., Serafini, J., &amp; Masarati, P. <em>On the CFD
           Fidelity Requirements for Assessing Classical Slosh Models in In-Orbit Servicing Regimes.</em>
-          <span class="venue">ESA GNC &amp; ICATT, Seville, Spain, Sep 28&ndash;Oct 2, 2026.</span></li>
+          <span class="venue">ESA GNC &amp; ICATT, Seville, Spain, Sep 28&ndash;Oct 2, 2026.</span>
+          <a href="https://doi.org/10.5270/esa-gnc-icatt-2026-028" target="_blank" rel="noopener">DOI</a></li>
+      <li>Cassoni, G., Serafini, J., Gennari, F., &amp; Masarati, P. <em>Coupled Fluid&ndash;Multibody Simulation
+          of Bubble Impact Loads on Spacecraft.</em>
+          <span class="venue">IMSD 2026, Seville, Spain. Peer-reviewed full paper, accepted.</span></li>
       <li>Cassoni, G., Madonna, D. P., Colella, A., Gennari, F., Serafini, J., &amp; Masarati, P.
           <em>Reduced-Order Modeling of Propellant Sloshing via Differential Variational Inequalities for
           On-Orbit Refueling Docking Missions.</em>
           <span class="venue">77th International Astronautical Congress, Antalya, T&uuml;rkiye, Oct 5&ndash;9, 2026.</span></li>
+      <li>Cassoni, G., Covetti, G., Gennari, F., &amp; Serafini, J. (2025). <em>When propellant controls the spin:
+          two-phase fluid dynamics and their impact on spacecraft rotational stability.</em>
+          <span class="venue">28th AIDAA &ndash; 10th CEAS Conference, Turin, Italy, 2025.</span></li>
       <li>Cassoni, G., Cocco, A., Tamer, A., Zanoni, A., &amp; Masarati, P. (2023). <em>Tiltrotor whirl-flutter
           stability analysis using the maximum Lyapunov characteristic exponent estimated from time series.</em>
           <span class="venue">AIDAA XXVII International Congress (2023), vol. 37, pp. 30&ndash;33.</span>
